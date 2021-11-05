@@ -3,7 +3,10 @@
 @author: Tihomir Heidelberg
 """
 
+import os
+
 PELTEC_WEBROOT = 'https://www.web-boiler.com'
+PELTEC_WEB_CERTIFICATE_FILE = os.path.dirname(__file__)  + "/certs.pem"
 
 PELTEC_STOMP_LOGIN_USERNAME = "appuser"
 PELTEC_STOMP_LOGIN_PASSCODE = "appuser"

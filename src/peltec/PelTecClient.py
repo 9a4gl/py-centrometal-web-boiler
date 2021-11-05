@@ -8,9 +8,6 @@ import sys
 import argparse
 import time
 
-import urllib3
-urllib3.disable_warnings()
-
 from PelTecHttpClient import PelTecHttpClient
 from PelTecWsClient import PelTecWsClient
 
@@ -66,6 +63,7 @@ if __name__ == '__main__':
             level=logging.DEBUG,
             format="%(asctime)s [%(levelname)s] %(message)s",
             handlers=[ logging.StreamHandler()])
+        logging.captureWarnings(True)
         testClient = PelTecClient()
         if not testClient.login(args.username, args.password):
             logging.error("Failed to login")
