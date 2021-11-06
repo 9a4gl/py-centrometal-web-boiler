@@ -25,10 +25,10 @@ class PelTecWsClient:
         websocket.enableTrace(enableWebSocketTracing)
         self.ws = websocket.WebSocketApp(
             PELTEC_STOMP_URL, 
-            on_message = self.on_msg, 
-            on_error = self.on_error, 
-            on_close = self.on_closed)
-        self.ws.on_open = self.on_open
+            on_message = self.onWebsocketMessage, 
+            on_error = self.onWebsocketError, 
+            on_close = self.onWebsocketClosed)
+        self.ws.on_open = self.onWebsocketOpen
         self.ws_thread = threading.Thread(
             target = self.ws.run_forever, 
             kwargs = {"ping_interval": 60, "ping_timeout": 5})
@@ -46,7 +46,7 @@ class PelTecWsClient:
         topic = PELTEC_STOMP_DEVICE_TOPIC + serial
         ws.send(stomper.subscribe(topic, "Peltec", "auto"))
 
-    def on_msg(self, ws, data):
+    def onWebsocketMessage(self, ws, data):
         if data == "\n":
             ws.send("\n")
             return
@@ -55,22 +55,22 @@ class PelTecWsClient:
             self.error_callback(ws, frame)
             return
         if frame["cmd"] == "CONNECTED":
-            self.logger.info(f"PelTecWsClient::on_msg connected")
+            self.logger.info(f"PelTecWsClient::onWebsocketMessage connected")
             self.subscribeToNotifications(ws)
             self.connected_callback(ws, frame)
             return
-        self.logger.debug(f"PelTecWsClient::on_msg {frame}")
+        self.logger.debug(f"PelTecWsClient::onWebsocketMessage {frame}")
         self.data_callback(ws, frame)
 
-    def on_error(self, ws, err):
-        self.logger.error(f"PelTecWsClient::on_error - {err}")
+    def onWebsocketError(self, ws, err):
+        self.logger.error(f"PelTecWsClient::onWebsocketError - {err}")
         self.error_callback(ws, err)
 
-    def on_closed(self, ws, close_status_code, close_msg):
-        self.logger.info(f"PelTecWsClient::on_closed close_status_code:{close_status_code} close_msg:{close_msg}")
+    def onWebsocketClosed(self, ws, close_status_code, close_msg):
+        self.logger.info(f"PelTecWsClient::onWebsocketClosed close_status_code:{close_status_code} close_msg:{close_msg}")
         self.disconnected_callback(ws, close_status_code, close_msg)
 
-    def on_open(self, ws):
-        self.logger.info(f"PelTecWsClient::on_open -> connecting ...")
+    def onWebsocketOpen(self, ws):
+        self.logger.info(f"PelTecWsClient::onWebsocketOpen -> connecting ...")
         ws.send(stomper.connect(PELTEC_STOMP_LOGIN_USERNAME, PELTEC_STOMP_LOGIN_PASSCODE, "/", (10000, 10000)))
 
