@@ -22,6 +22,9 @@ class PelTecDevice(dict):
         self["info"] = {}
         self["weather"] = {}
 
+    def hasParameter(self, name):
+        return name in self["parameters"].keys()
+
     def updateParameter(self, name, value, timestamp = None) -> PelTecParameter:
         if timestamp == None:
             timestamp = int(time.time())
@@ -104,12 +107,13 @@ class PelTecDeviceCollection(dict):
                 else:
                     raise Exception(f"Unknown data_id in parameter_list data_id:{data_id}")
 
-    def _updateDevice(self, device, body):
+    def _updateDeviceWithRealTimeData(self, device, body):
         data = json.loads(body)
         for param_id, value in data.items():
-            parameter = device.updateParameter(param_id, value)
-            if self.on_update_callback is not None:
-                self.on_update_callback(device, parameter)
+            if device.hasParameter(param_id):
+                parameter = device.updateParameter(param_id, value)
+                if self.on_update_callback is not None:
+                    self.on_update_callback(device, parameter)
 
     def parseRealTimeFrame(self, stomp_frame):
         if "headers" in stomp_frame and "body" in stomp_frame:
@@ -122,7 +126,7 @@ class PelTecDeviceCollection(dict):
                     if destination.startswith(PELTEC_STOMP_DEVICE_TOPIC):
                         serial = destination[len(PELTEC_STOMP_DEVICE_TOPIC):]
                         device = self.getDeviceBySerial(serial)
-                        self._updateDevice(device, body)
+                        self._updateDeviceWithRealTimeData(device, body)
                     else:
                         raise Exception(f"Unexpected message for destination: {destination}")
                 elif subscription == PELTEC_STOMP_NOTIFICATION_TOPIC:
