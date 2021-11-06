@@ -4,6 +4,10 @@
 """
 
 import json
+import time
+import datetime
+
+from const import PELTEC_STOMP_DEVICE_TOPIC
 
 class PelTecParameter(dict):
     def update(self, name, value, timestamp = None):
@@ -20,6 +24,11 @@ class PelTecDevice(dict):
         self["weather"] = {}
 
     def updateParameter(self, name, value, timestamp = None):
+        if timestamp == None:
+            timestamp = int(time.time())
+        else:
+            date_time_obj = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+            timestamp = int(date_time_obj.replace(tzinfo=datetime.timezone.utc).timestamp())
         if name not in self["parameters"].keys():
             self["parameters"][name] = PelTecParameter()
         self["parameters"][name].update(name, value, timestamp)
@@ -88,5 +97,24 @@ class PelTecDeviceCollection(dict):
                 else:
                     raise Exception(f"Unknown data_id in parameter_list data_id:{data_id}")
 
-    def parseRealTimeFrame(self, frame):
-        pass
+    def _updateDevice(self, device, body):
+        data = json.loads(body)
+        for param_id, value in data.items():
+            device.updateParameter(param_id, value)
+
+    def parseRealTimeFrame(self, stomp_frame):
+        if "headers" in stomp_frame and "body" in stomp_frame:
+            headers = stomp_frame["headers"]
+            body = stomp_frame["body"]
+            if "subscription" in headers and "destination" in headers:
+                subscription = headers["subscription"]
+                destination = headers["destination"]
+                if subscription == "Peltec":
+                    if destination.startswith(PELTEC_STOMP_DEVICE_TOPIC):
+                        serial = destination[len(PELTEC_STOMP_DEVICE_TOPIC):]
+                        device = self.getDeviceBySerial(serial)
+                        self._updateDevice(device, body)
+                    else:
+                        raise Exception(f"Unexpected message for destination: {destination}")
+                else:
+                    raise Exception(f"Unexpected message for subscription: {subscription}")

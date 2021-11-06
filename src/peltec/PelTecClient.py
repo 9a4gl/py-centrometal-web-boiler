@@ -57,8 +57,8 @@ class PelTecClient:
     def wsErrorCallback(self, ws, err):
         self.logger.error(f"PelTecClient - error err:{err}")
     
-    def wsDataCallback(self, ws, msg):        
-        self.logger.info(f"PelTecClient - data:{msg}")
+    def wsDataCallback(self, ws, stomp_frame):        
+        self.data.parseRealTimeFrame(stomp_frame)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PelTec.')
@@ -78,6 +78,5 @@ if __name__ == '__main__':
             logging.error("Failed to login")
         else:
             testClient.start()
-            for i in range(0, 1000):
+            while (True):
                 time.sleep(1)
-            logging.info("game over")
