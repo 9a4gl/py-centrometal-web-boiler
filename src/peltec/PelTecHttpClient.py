@@ -6,7 +6,6 @@
 import logging
 import requests
 import json
-import os
 import sys
 import traceback
 from lxml import html
@@ -24,6 +23,7 @@ class PelTecHttpClient:
         self.password = password
         self.http_session = requests.Session()
         self.http_session.verify = PELTEC_WEB_CERTIFICATE_FILE
+        self.parameter_list = dict()
 
     def __http_get(self, url, expected_code = 200) -> html.HtmlElement:
         response = self.http_session.get(PELTEC_WEBROOT + url, headers = self.headers)
@@ -82,34 +82,31 @@ class PelTecHttpClient:
     def get_notifications(self) -> None:
         html_doc = self.__http_post("/notifications/data/get")
 
-    def get_data_installation(self):
-        self.data_installation = self.__http_post_json("/data/autocomplete/installation", data=json.dumps({}))
-        self.logger.info("PelTecHttpClient::get_data_installation -> " + json.dumps(self.data_installation, indent=4))
-        # TODO parse data installation
+    def get_installations(self):
+        self.installations = self.__http_post_json("/data/autocomplete/installation", data=json.dumps({}))
+        self.installations = self.installations["installations"]
+        self.logger.debug("PelTecHttpClient::get_installations -> " + json.dumps(self.installations, indent=4))
 
     def get_configuration(self) -> None:
         self.configuration = self.__http_post_json('/api/configuration', data=json.dumps({}))
-        self.logger.info("PelTecHttpClient::get_configuration configuration -> " + json.dumps(self.configuration, indent=4))
-        # TODO parse configuration
+        self.logger.debug("PelTecHttpClient::get_configuration configuration -> " + json.dumps(self.configuration, indent=4))
         
-    # TODO remove if not needed
     def get_widgetgrid_list(self) -> None:
         self.widgetgrid_list = self.__http_post_json('/api/widgets-grid/list', data=json.dumps({}))
 
-    # TODO remove if not needed
-    def get_widgetgrid(self):
-        data = { "id": "37144", "inst": "null" }
+    def get_widgetgrid(self, id):
+        data = { "id": str(id), "inst": "null" }
         self.widgetgrid = self.__http_post_json('/api/widgets-grid', data=json.dumps(data))
 
-    def get_installation_status_all(self) -> None:
-        data = { "installations": [ 2719 ]}
+    def get_installation_status_all(self, ids : list) -> None:
+        data = { "installations": ids }
         self.installation_status_all = self.__http_post_json('/wdata/data/installation-status-all', data=json.dumps(data))
-        self.logger.info("PelTecHttpClient::get_installation_status_all -> " + json.dumps(self.installation_status_all, indent=4))
+        self.logger.debug("PelTecHttpClient::get_installation_status_all -> " + json.dumps(self.installation_status_all, indent=4))
         # TODO parse
 
     def get_parameter_list(self, serial) -> None:
-        self.parameter_list = self.__http_post_json('/wdata/data/parameter-list/' + serial, data=json.dumps({}))
-        self.logger.info("PelTecHttpClient::get_parameter_list -> " + json.dumps(self.parameter_list, indent=4))
+        self.parameter_list[serial] = self.__http_post_json('/wdata/data/parameter-list/' + serial, data=json.dumps({}))
+        self.logger.debug("PelTecHttpClient::get_parameter_list -> " + json.dumps(self.parameter_list[serial], indent=4))
         # TODO parse
 
     def __control(self, data) -> None:

@@ -9,6 +9,7 @@ import argparse
 import time
 
 from PelTecHttpClient import PelTecHttpClient
+from PelTecHttpHelper import PelTecHttpHelper
 from PelTecWsClient import PelTecWsClient
 
 class PelTecClient:
@@ -20,6 +21,7 @@ class PelTecClient:
         self.username = username
         self.password = password
         self.http_client = PelTecHttpClient(self.username, self.password)
+        self.http_helper = PelTecHttpHelper(self.http_client)
         return self.http_client.login()
 
     def start(self, serial):
@@ -31,11 +33,16 @@ class PelTecClient:
     def ws_connected_callback(self):
         self.logger.info("PelTecClient - connected")
         self.http_client.get_notifications()
-        self.http_client.get_data_installation()
+        self.http_client.get_installations()
+        if self.http_helper.getDeviceCount() == 0:
+            self.logger.warning("PelTecClient - there is no installed device")
+            return
+        self.http_client.get_configuration()
         # not needed httpClient.get_widgetgrid_list()
-        # not needed httpClient.get_widgetgrid()
-        self.http_client.get_installation_status_all()
-        self.http_client.get_parameter_list(self.serial)
+        # not needed httpClient.get_widgetgrid(37144)
+        self.http_client.get_installation_status_all(self.http_helper.getAllDevicesIds())
+        for serial in self.http_helper.getAllDevicesSerials():
+            self.http_client.get_parameter_list(serial)
         self.http_client.get_notifications()
         self.http_client.refresh()
         # not needed httpClient.control_advanced()
