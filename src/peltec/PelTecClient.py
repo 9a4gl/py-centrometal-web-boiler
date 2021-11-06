@@ -4,7 +4,6 @@
 """
 
 import logging
-import sys
 import argparse
 import time
 
@@ -24,13 +23,12 @@ class PelTecClient:
         self.http_helper = PelTecHttpHelper(self.http_client)
         return self.http_client.login()
 
-    def start(self, serial):
+    def start(self):
         self.logger.info("PelTecClient - Starting...")
-        self.serial = serial
         self.ws_client = PelTecWsClient(self.ws_connected_callback, self.ws_disconnected_callback, self.ws_error_callback, self.ws_data_callback)
-        self.ws_client.start(serial)
+        self.ws_client.start()
 
-    def ws_connected_callback(self):
+    def ws_connected_callback(self, ws):
         self.logger.info("PelTecClient - connected")
         self.http_client.get_notifications()
         self.http_client.get_installations()
@@ -42,28 +40,28 @@ class PelTecClient:
         # not needed httpClient.get_widgetgrid(37144)
         self.http_client.get_installation_status_all(self.http_helper.getAllDevicesIds())
         for serial in self.http_helper.getAllDevicesSerials():
+            self.ws_client.subscribeToInstallation(ws, serial)
             self.http_client.get_parameter_list(serial)
         self.http_client.get_notifications()
         self.http_client.refresh()
         # not needed httpClient.control_advanced()
         self.http_client.rstat_all()
 
-    def ws_disconnected_callback(self, close_status_code, close_msg):
+    def ws_disconnected_callback(self, ws, close_status_code, close_msg):
         self.logger.warning(f"PelTecClient - disconnected close_status_code:{close_status_code} close_msg:{close_msg}")
 
-    def ws_error_callback(self, err):
+    def ws_error_callback(self, ws, err):
         self.logger.error(f"PelTecClient - error err:{err}")
     
-    def ws_data_callback(self, msg):
+    def ws_data_callback(self, ws, msg):
         self.logger.info(f"PelTecClient - data:{msg}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PelTec.')
     parser.add_argument('--username', help='Username')
     parser.add_argument('--password', help='Password')
-    parser.add_argument('--serial', help='Serial')
     args = parser.parse_args()
-    if args.username == None or args.password == None or args.serial == None:
+    if args.username == None or args.password == None:
         parser.print_help()
     else:
         logging.basicConfig(
@@ -75,7 +73,7 @@ if __name__ == '__main__':
         if not testClient.login(args.username, args.password):
             logging.error("Failed to login")
         else:
-            testClient.start(args.serial)
+            testClient.start()
             for i in range(0, 1000):
                 time.sleep(1)
             logging.info("over")

@@ -14,15 +14,13 @@ class PelTecWsClient:
     def __init__(self, connected_callback, disconnected_callback, error_callback, data_callback):
         self.ws = None
         self.ws_thread = None
-        self.serial = None
         self.logger = logging.getLogger(__name__)
         self.connected_callback = connected_callback
         self.disconnected_callback = disconnected_callback
         self.error_callback = error_callback
         self.data_callback = data_callback
 
-    def start(self, serial, enableWebSocketTracing = False):
-        self.serial = serial
+    def start(self, enableWebSocketTracing = False):
         websocket.enableTrace(enableWebSocketTracing)
         self.ws = websocket.WebSocketApp(
             PELTEC_STOMP_URL, 
@@ -37,35 +35,42 @@ class PelTecWsClient:
         self.ws_thread.start()
         self.logger.info("PelTecWsClient starting...")
 
+    def subscribeToNotifications(self, ws):
+        self.logger.info(f"PelTecWsClient::subscribeToNotifications")
+        topic = "/queue/notification"
+        msg = "SUBSCRIBE\nid:%s\ndestination:%s\nack:%s\n\n\x00\n" % ("sub-0", topic, "auto")
+        ws.send(msg)
+
+    def subscribeToInstallation(self, ws, serial):
+        self.logger.info(f"PelTecWsClient::subscribeToInstallation {serial}")
+        topic = "/topic/cm.inst.peltec." + serial
+        msg = "SUBSCRIBE\nid:%s\ndestination:%s\nack:%s\n\n\x00\n" % ("Peltec", topic, "auto")
+        ws.send(msg)
+
     def on_msg(self, ws, msg):
         if msg == "\n":
             ws.send("\n")
             return
         self.logger.debug(f"PelTecWsClient::on_msg {msg}")
         if msg.startswith("ERROR"):
-            self.error_callback(msg)
+            self.error_callback(ws, msg)
             return
         if msg.startswith("CONNECTED"):
             self.logger.info(f"PelTecWsClient::on_msg connected -> subscribing ...")
-            topic = "/queue/notification"
-            msg = "SUBSCRIBE\nid:%s\ndestination:%s\nack:%s\n\n\x00\n" % ("sub-0", topic, "auto")
-            ws.send(msg)
-            topic = "/topic/cm.inst.peltec." + self.serial
-            msg = "SUBSCRIBE\nid:%s\ndestination:%s\nack:%s\n\n\x00\n" % ("Peltec", topic, "auto")
-            ws.send(msg)
-            self.connected_callback()
+            self.subscribeToNotifications(ws)
+            self.connected_callback(ws)
             return
-        self.data_callback(msg)
+        self.data_callback(ws, msg)
 
     def on_error(self, ws, err):
         self.logger.error(f"PelTecWsClient::on_error - {err}")
-        self.error_callback(err)
+        self.error_callback(ws, err)
 
     def on_closed(self, ws, close_status_code, close_msg):
         self.logger.error("PelTecWsClient::on_closed #Closed#")
         self.logger.error(f"PelTecWsClient::on_closed close_status_code:", close_status_code)
         self.logger.error(f"PelTecWsClient::on_closed close_msg:", close_msg)
-        self.disconnected_callback(close_status_code, close_msg)
+        self.disconnected_callback(ws, close_status_code, close_msg)
 
     def on_open(self, ws):
         self.logger.info(f"PelTecWsClient::on_open -> connecting ...")
