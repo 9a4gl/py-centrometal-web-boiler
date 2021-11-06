@@ -101,13 +101,11 @@ class PelTecHttpClient:
     def get_installation_status_all(self, ids : list) -> None:
         data = { "installations": ids }
         self.installation_status_all = self.__http_post_json('/wdata/data/installation-status-all', data=json.dumps(data))
-        self.logger.info("PelTecHttpClient::get_installation_status_all -> " + json.dumps(self.installation_status_all, indent=4))
-        # TODO parse
+        self.logger.debug("PelTecHttpClient::get_installation_status_all -> " + json.dumps(self.installation_status_all, indent=4))
 
     def get_parameter_list(self, serial) -> None:
         self.parameter_list[serial] = self.__http_post_json('/wdata/data/parameter-list/' + serial, data=json.dumps({}))
-        self.logger.info("PelTecHttpClient::get_parameter_list -> " + json.dumps(self.parameter_list[serial], indent=4))
-        # TODO parse
+        self.logger.debug("PelTecHttpClient::get_parameter_list -> " + json.dumps(self.parameter_list[serial], indent=4))
 
     def __control(self, data) -> None:
         response = self.__http_post_json('/api/inst/control/multiple', data=json.dumps(data))
@@ -122,8 +120,23 @@ class PelTecHttpClient:
         data = { 'messages': { str(id): { 'RSTAT': "ALL" } } }
         self.__control(data)
 
-    def control_advanced(self, id) -> None:
-        data = { "parameters": { "PRD 222": "VAL", "PRD 223": "ALV" } }
+    def __control_advanced(self, id, params) -> None:
+        data = { "parameters": params }
         response = self.__http_post_json('/api/inst/control/advanced/' + str(id), data=json.dumps(data))
         self.logger.info("Sending advanced command {data}")
         self.logger.info("Received advanced response {{{json.dumps(response)}}}")
+
+    def get_active_table(self, id) -> None:
+        if "grid" in self.widgetgrid:
+            grid = json.loads(self.widgetgrid["grid"])
+            if "widgets" in grid:
+                widgets2 = grid["widgets2"]
+                if len(widgets2) > 0:
+                    for widget2 in widgets2:
+                        template = widget2["template"]
+                        if template == "v3.timetable":
+                            data = widget2["data"]
+                            activeTable = data["activeTable"]
+                            table = data["table"]
+                            params = { "PRD " + str(activeTable): "VAL", "PRD " +str (table): "ALV" }
+                            self.__control_advanced(id, params)

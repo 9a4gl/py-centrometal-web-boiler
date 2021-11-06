@@ -59,15 +59,15 @@ class PelTecWsClient:
             self.subscribeToNotifications(ws)
             self.connected_callback(ws, frame)
             return
+        self.logger.debug(f"PelTecWsClient::on_msg {frame}")
         self.data_callback(ws, frame)
-        self.logger.info(f"PelTecWsClient::on_msg {frame}")
 
     def on_error(self, ws, err):
         self.logger.error(f"PelTecWsClient::on_error - {err}")
         self.error_callback(ws, err)
 
     def on_closed(self, ws, close_status_code, close_msg):
-        self.logger.error(f"PelTecWsClient::on_closed close_status_code:{close_status_code} close_msg:{close_msg}")
+        self.logger.info(f"PelTecWsClient::on_closed close_status_code:{close_status_code} close_msg:{close_msg}")
         self.disconnected_callback(ws, close_status_code, close_msg)
 
     def on_open(self, ws):
