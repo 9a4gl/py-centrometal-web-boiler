@@ -28,7 +28,7 @@ class PelTecClient:
         self.ws_client = PelTecWsClient(self.ws_connected_callback, self.ws_disconnected_callback, self.ws_error_callback, self.ws_data_callback)
         self.ws_client.start()
 
-    def ws_connected_callback(self, ws):
+    def ws_connected_callback(self, ws, frame):
         self.logger.info("PelTecClient - connected")
         self.http_client.get_notifications()
         self.http_client.get_installations()
@@ -43,9 +43,10 @@ class PelTecClient:
             self.ws_client.subscribeToInstallation(ws, serial)
             self.http_client.get_parameter_list(serial)
         self.http_client.get_notifications()
-        self.http_client.refresh()
-        # not needed httpClient.control_advanced()
-        self.http_client.rstat_all()
+        for id in self.http_helper.getAllDevicesIds():
+            self.http_client.refresh(id)
+            # not needed httpClient.control_advanced(id)
+            self.http_client.rstat_all(id)
 
     def ws_disconnected_callback(self, ws, close_status_code, close_msg):
         self.logger.warning(f"PelTecClient - disconnected close_status_code:{close_status_code} close_msg:{close_msg}")
@@ -65,7 +66,7 @@ if __name__ == '__main__':
         parser.print_help()
     else:
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO,
             format="%(asctime)s [%(levelname)s] %(message)s",
             handlers=[ logging.StreamHandler()])
         logging.captureWarnings(True)

@@ -101,30 +101,29 @@ class PelTecHttpClient:
     def get_installation_status_all(self, ids : list) -> None:
         data = { "installations": ids }
         self.installation_status_all = self.__http_post_json('/wdata/data/installation-status-all', data=json.dumps(data))
-        self.logger.debug("PelTecHttpClient::get_installation_status_all -> " + json.dumps(self.installation_status_all, indent=4))
+        self.logger.info("PelTecHttpClient::get_installation_status_all -> " + json.dumps(self.installation_status_all, indent=4))
         # TODO parse
 
     def get_parameter_list(self, serial) -> None:
         self.parameter_list[serial] = self.__http_post_json('/wdata/data/parameter-list/' + serial, data=json.dumps({}))
-        self.logger.debug("PelTecHttpClient::get_parameter_list -> " + json.dumps(self.parameter_list[serial], indent=4))
+        self.logger.info("PelTecHttpClient::get_parameter_list -> " + json.dumps(self.parameter_list[serial], indent=4))
         # TODO parse
 
     def __control(self, data) -> None:
         response = self.__http_post_json('/api/inst/control/multiple', data=json.dumps(data))
         self.logger.info(f"Sending command {data}")
-        self.logger.info(f"Received response {{{json.dumps(response)}}}\n")
+        self.logger.info(f"Received response {{{json.dumps(response)}}}")
 
-    def refresh(self) -> None:
-        data = { 'messages': { '2719': { 'REFRESH': 0 } } }
+    def refresh(self, id) -> None:
+        data = { 'messages': { str(id): { 'REFRESH': 0 } } }
         self.__control(data)
     
-    def rstat_all(self) -> None:
-        data = { 'messages': { '2719': { 'RSTAT': "ALL" } } }
+    def rstat_all(self, id) -> None:
+        data = { 'messages': { str(id): { 'RSTAT': "ALL" } } }
         self.__control(data)
 
-    # TODO do we need this?
-    def control_advanced(self, id ="2719") -> None: # TODO replace all 2719 with installation id
+    def control_advanced(self, id) -> None:
         data = { "parameters": { "PRD 222": "VAL", "PRD 223": "ALV" } }
-        response = self.__http_post_json('/api/inst/control/advanced/' + id, data=json.dumps(data))
+        response = self.__http_post_json('/api/inst/control/advanced/' + str(id), data=json.dumps(data))
         self.logger.info("Sending advanced command {data}")
-        self.logger.info("Received advanced response {{{json.dumps(response)}}}\n")
+        self.logger.info("Received advanced response {{{json.dumps(response)}}}")

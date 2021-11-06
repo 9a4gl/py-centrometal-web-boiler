@@ -19,7 +19,7 @@ class PelTecHttpHelper:
 
     def getDeviceById(self, id):
         for device in self.client.installations:
-            if device["value"] == id:
+            if str(device["value"]) == str(id):
                 return device
         raise Exception("PelTecHttpHelper:getDeviceById invalid id")
 
