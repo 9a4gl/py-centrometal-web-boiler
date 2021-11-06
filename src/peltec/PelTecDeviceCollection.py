@@ -7,14 +7,13 @@ import json
 import time
 import datetime
 
-from const import PELTEC_STOMP_DEVICE_TOPIC
+from const import PELTEC_STOMP_DEVICE_TOPIC, PELTEC_STOMP_NOTIFICATION_TOPIC
 
 class PelTecParameter(dict):
     def update(self, name, value, timestamp = None):
         self["name"] = name
         self["value"] = value
         self["timestamp"] = timestamp
-
 
 class PelTecDevice(dict):
     def __init__(self):
@@ -23,7 +22,7 @@ class PelTecDevice(dict):
         self["info"] = {}
         self["weather"] = {}
 
-    def updateParameter(self, name, value, timestamp = None):
+    def updateParameter(self, name, value, timestamp = None) -> PelTecParameter:
         if timestamp == None:
             timestamp = int(time.time())
         else:
@@ -31,9 +30,17 @@ class PelTecDevice(dict):
             timestamp = int(date_time_obj.replace(tzinfo=datetime.timezone.utc).timestamp())
         if name not in self["parameters"].keys():
             self["parameters"][name] = PelTecParameter()
-        self["parameters"][name].update(name, value, timestamp)
+        parameter = self["parameters"][name]
+        parameter.update(name, value, timestamp)
+        return parameter
 
 class PelTecDeviceCollection(dict):
+
+    def __init__(self, on_update_callback = None):
+        self.on_update_callback = on_update_callback
+
+    def setOnUpdateCallback(self, on_update_callback):
+        self.on_update_callback = on_update_callback
 
     def getDeviceById(self, id):
         for device_id, device in self.items():
@@ -100,7 +107,9 @@ class PelTecDeviceCollection(dict):
     def _updateDevice(self, device, body):
         data = json.loads(body)
         for param_id, value in data.items():
-            device.updateParameter(param_id, value)
+            parameter = device.updateParameter(param_id, value)
+            if self.on_update_callback is not None:
+                self.on_update_callback(device, parameter)
 
     def parseRealTimeFrame(self, stomp_frame):
         if "headers" in stomp_frame and "body" in stomp_frame:
@@ -116,5 +125,7 @@ class PelTecDeviceCollection(dict):
                         self._updateDevice(device, body)
                     else:
                         raise Exception(f"Unexpected message for destination: {destination}")
+                elif subscription == PELTEC_STOMP_NOTIFICATION_TOPIC:
+                    self.logger.info(f"Notification received: {body}")
                 else:
                     raise Exception(f"Unexpected message for subscription: {subscription}")

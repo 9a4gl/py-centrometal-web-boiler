@@ -8,7 +8,12 @@ import threading
 import logging
 import stomper
 
-from const import PELTEC_STOMP_LOGIN_USERNAME, PELTEC_STOMP_LOGIN_PASSCODE, PELTEC_STOMP_URL, PELTEC_STOMP_DEVICE_TOPIC
+from const import (
+    PELTEC_STOMP_LOGIN_USERNAME, 
+    PELTEC_STOMP_LOGIN_PASSCODE, 
+    PELTEC_STOMP_URL, 
+    PELTEC_STOMP_DEVICE_TOPIC, 
+    PELTEC_STOMP_NOTIFICATION_TOPIC)
 
 class PelTecWsClient:
 
@@ -38,7 +43,7 @@ class PelTecWsClient:
 
     def subscribeToNotifications(self, ws):
         self.logger.info(f"PelTecWsClient::subscribeToNotifications")
-        topic = "/queue/notification"
+        topic = PELTEC_STOMP_NOTIFICATION_TOPIC
         ws.send(stomper.subscribe(topic, "sub-0", "auto"))
 
     def subscribeToInstallation(self, ws, serial):

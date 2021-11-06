@@ -22,7 +22,7 @@ class PelTecClient:
         self.password = password
         self.http_client = PelTecHttpClient(self.username, self.password)
         self.http_helper = PelTecHttpHelper(self.http_client)
-        self.data = PelTecDeviceCollection()
+        self.data = PelTecDeviceCollection(self.onParameterUpdated)
         return self.http_client.login()
 
     def start(self):
@@ -59,6 +59,12 @@ class PelTecClient:
     
     def wsDataCallback(self, ws, stomp_frame):        
         self.data.parseRealTimeFrame(stomp_frame)
+
+    def onParameterUpdated(self, device, param):
+        serial = device["serial"]
+        name = param["name"]
+        value = param["value"]
+        self.logger.info(f"Updated {serial} {name} = {value}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PelTec.')
