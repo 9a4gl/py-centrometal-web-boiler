@@ -25,10 +25,10 @@ class PelTecClient:
         self.data = PelTecDeviceCollection()
         return self.http_client.login()
 
-    def start(self, on_started_callback):
+    def start(self, on_parameter_updated_callback):
         self.logger.info("PelTecClient - Starting...")
         self.ws_client = PelTecWsClient(self.wsConnectedCallback, self.wsDisconnectedCallback, self.wsErrorCallback, self.wsDataCallback)
-        self.on_started_callback = on_started_callback
+        self.on_parameter_updated_callback = on_parameter_updated_callback
         self.ws_client.start()
 
     def wsConnectedCallback(self, ws, frame):
@@ -48,7 +48,13 @@ class PelTecClient:
         self.data.parseInstallationStatuses(self.http_client.installation_status_all)
         self.data.parseParameterLists(self.http_client.parameter_list)
         self.http_client.getNotifications()
-        self.on_started_callback()
+        #
+        for serial, device in self.data.items():
+            parameters = device["parameters"]
+            for parameter in parameters.values():
+                self.on_parameter_updated_callback(device, parameter, True)
+        testClient.data.setOnUpdateCallback(self.on_parameter_updated_callback)
+        self.refresh()
 
     def refresh(self):
         for id in self.http_helper.getAllDevicesIds():
@@ -81,19 +87,12 @@ if __name__ == '__main__':
         if not testClient.login(args.username, args.password):
             logging.error("Failed to login")
         else:
-            def onParameterUpdated(device, param):
+            def onParameterUpdated(device, param, create = False):
+                action = "Create" if create else "update"
                 serial = device["serial"]
                 name = param["name"]
                 value = param["value"]
-                logging.info(f"Updated {serial} {name} = {value}")
-            def onStarted():
-                for serial, device in testClient.data.items():
-                    parameters = device["parameters"]
-                    for parameter_name, parameter in parameters.items():
-                        onParameterUpdated(device, parameter)
-                testClient.refresh()
-            testClient.data.setOnUpdateCallback(onParameterUpdated)
-            testClient.start(onStarted)
-            
+                logging.info(f"{action} {serial} {name} = {value}")
+            testClient.start(onParameterUpdated)
             while (True):
                 time.sleep(1)

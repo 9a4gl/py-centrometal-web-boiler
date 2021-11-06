@@ -46,13 +46,13 @@ class PelTecDeviceCollection(dict):
         self.on_update_callback = on_update_callback
 
     def getDeviceById(self, id):
-        for device_id, device in self.items():
+        for device in self.values():
             if str(id) == str(device["id"]):
                 return device
         raise Exception(f"No device with id:{id}")
 
     def getDeviceBySerial(self, serial):
-        for device_id, device in self.items():
+        for device in self.values():
             if str(serial) == str(device["serial"]):
                 return device
         raise Exception(f"No device with serial:{serial}")
