@@ -8,7 +8,7 @@ import threading
 import logging
 import stomper
 
-from const import (
+from .const import (
     PELTEC_STOMP_LOGIN_USERNAME, 
     PELTEC_STOMP_LOGIN_PASSCODE, 
     PELTEC_STOMP_URL, 

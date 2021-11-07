@@ -7,10 +7,10 @@ import logging
 import argparse
 import time
 
-from PelTecHttpClient import PelTecHttpClient
-from PelTecHttpHelper import PelTecHttpHelper
-from PelTecWsClient import PelTecWsClient
-from PelTecDeviceCollection import PelTecDeviceCollection
+import PelTecHttpClient
+import PelTecHttpHelper
+import PelTecWsClient
+import PelTecDeviceCollection
 
 class PelTecClient:
     def __init__(self):
