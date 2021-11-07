@@ -7,7 +7,7 @@ import json
 import time
 import datetime
 
-from .const import PELTEC_STOMP_DEVICE_TOPIC, PELTEC_STOMP_NOTIFICATION_TOPIC
+from peltec.const import PELTEC_STOMP_DEVICE_TOPIC, PELTEC_STOMP_NOTIFICATION_TOPIC
 
 class PelTecParameter(dict):
     def update(self, name, value, timestamp = None):

@@ -3,7 +3,7 @@
 @author: Tihomir Heidelberg
 """
 
-import PelTecHttpClient
+from peltec.PelTecHttpClient import PelTecHttpClient
 
 class PelTecHttpHelper:
     def __init__(self, client : PelTecHttpClient):

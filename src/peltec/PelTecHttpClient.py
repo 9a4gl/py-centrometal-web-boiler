@@ -10,7 +10,7 @@ import sys
 import traceback
 from lxml import html
 
-from const import PELTEC_WEBROOT, PELTEC_WEB_CERTIFICATE_FILE
+from peltec.const import PELTEC_WEBROOT, PELTEC_WEB_CERTIFICATE_FILE
 
 class PelTecHttpClientBase:
 

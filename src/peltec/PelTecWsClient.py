@@ -8,7 +8,7 @@ import threading
 import logging
 import stomper
 
-from .const import (
+from peltec.const import (
     PELTEC_STOMP_LOGIN_USERNAME, 
     PELTEC_STOMP_LOGIN_PASSCODE, 
     PELTEC_STOMP_URL, 
@@ -61,7 +61,6 @@ class PelTecWsClient:
             return
         if frame["cmd"] == "CONNECTED":
             self.logger.info(f"PelTecWsClient::onWebsocketMessage connected")
-            self.subscribeToNotifications(ws)
             self.connected_callback(ws, frame)
             return
         self.logger.debug(f"PelTecWsClient::onWebsocketMessage {frame}")
