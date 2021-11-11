@@ -13,7 +13,9 @@ from peltec.PelTecDeviceCollection import PelTecDeviceCollection
 class PelTecClient:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.should_stop = False
+        self.autoreconnect = False
+        self.websocket_connected = False
+        self.ws_client = None
     
     def login(self, username, password):
         self.logger.info("PelTecClient - Logging in...")
@@ -41,20 +43,37 @@ class PelTecClient:
         self.http_client.getNotifications()
         return True
 
-    def start(self, on_parameter_updated_callback):
+    def close_websocket(self) -> bool:
+        try:
+            if self.ws_client is not None:
+                self.ws_client.close()
+                self.ws_client = None
+            return True
+        except Exception as e:
+            self.logger.error("PelTecClient::close_websocket failed" + str(e))
+            return False
+
+    def start_websocket(self, on_parameter_updated_callback, autoreconnect : bool = False):
         self.logger.info("PelTecClient - Starting...")
+        self.close_websocket()
         self.ws_client = PelTecWsClient(self.wsConnectedCallback, self.wsDisconnectedCallback, self.wsErrorCallback, self.wsDataCallback)
         self.on_parameter_updated_callback = on_parameter_updated_callback
-        self.should_stop = False
+        self.autoreconnect = autoreconnect
         self.ws_client.start()
 
-    def refresh(self):
-        for id in self.http_helper.getAllDevicesIds():
-            self.http_client.refreshDevice(id)
-            self.http_client.rstatAllDevice(id)
+    def refresh(self) -> bool:
+        try:
+            for id in self.http_helper.getAllDevicesIds():
+                self.http_client.refreshDevice(id)
+                self.http_client.rstatAllDevice(id)
+            return True
+        except Exception as e:
+            self.logger.error("PelTecClient::refresh failed" + str(e))
+            return False
 
     def wsConnectedCallback(self, ws, frame):
         self.logger.info("PelTecClient - connected")
+        self.websocket_connected = True
         self.ws_client.subscribeToNotifications(ws)
         for serial in self.http_helper.getAllDevicesSerials():
             self.ws_client.subscribeToInstallation(ws, serial)
@@ -66,8 +85,9 @@ class PelTecClient:
         self.refresh()
 
     def wsDisconnectedCallback(self, ws, close_status_code, close_msg):
+        self.websocket_connected = False
         self.logger.warning(f"PelTecClient - disconnected close_status_code:{close_status_code} close_msg:{close_msg}")
-        if not self.should_stop:
+        if self.autoreconnect:
             self.logger.info("Webcocket reconnecting...")
             self.start(self.on_parameter_updated_callback)
 
@@ -78,6 +98,9 @@ class PelTecClient:
         self.data.parseRealTimeFrame(stomp_frame)
 
     def stop(self):
-        self.should_stop = True
+        self.autoreconnect = False
         if self.ws_client:
             self.ws_client.close()
+
+    def is_websocket_connected(self) -> bool:
+        return self.websocket_connected

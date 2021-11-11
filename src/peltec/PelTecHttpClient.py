@@ -35,13 +35,19 @@ class PelTecHttpClientBase:
         response = self.http_session.post(PELTEC_WEBROOT + url, headers = self.headers, data = data)
         if response.status_code != expected_code:
             raise Exception(f"PelTecHttpClient::__post {url} failed with http code: {response.status_code}")
-        return html.fromstring(response.text)
+        try:
+            return html.fromstring(response.text)
+        except:
+            raise Exception(f"PelTecHttpClient::__post {url} failed to parse html content: {response.text}")
 
     def _httpPostJson(self, url, data = None, expected_code = 200) -> dict:
         response = self.http_session.post(PELTEC_WEBROOT + url, headers = self.headers_json, data = data)
         if response.status_code != expected_code:
-            raise Exception(f"PelTecHttpClient::__post {url} failed with http code: {response.status_code}")
-        return json.loads(response.text)
+            raise Exception(f"PelTecHttpClient::_httpPostJson {url} failed with http code: {response.status_code}")
+        try:
+            return json.loads(response.text)
+        except:
+            raise Exception(f"PelTecHttpClient::_httpPostJson {url} failed to parse json content: {response.text}")
 
     def _control(self, data) -> None:
         response = self._httpPostJson('/api/inst/control/multiple', data=json.dumps(data))
