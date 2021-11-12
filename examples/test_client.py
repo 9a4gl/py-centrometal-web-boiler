@@ -28,12 +28,12 @@ if __name__ == '__main__':
         elif not testClient.get_configuration():
             logging.error("Failed to get configuration")
         else:
-            def onParameterUpdated(device, param, create = False):
+            def on_parameter_updated(device, param, create = False):
                 action = "Create" if create else "update"
                 serial = device["serial"]
                 name = param["name"]
                 value = param["value"]
                 logging.info(f"{action} {serial} {name} = {value}")
-            testClient.start(onParameterUpdated)
+            testClient.start_websocket(on_parameter_updated, False)
             while (True):
                 time.sleep(1)

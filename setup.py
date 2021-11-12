@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
    name='py-peltec',
-   version='0.0.5',
+   version='0.0.6',
    description='Python library to interact with Centrometal Pel-Tec systems.',
    author='Tihomir Heidelberg',
    author_email='tihomir.heidelberg@lite.hr',
