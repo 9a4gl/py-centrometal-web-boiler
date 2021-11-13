@@ -38,8 +38,11 @@ if __name__ == '__main__':
             while (True):
                 for i in range(0, 10):
                     time.sleep(1)
+                testClient.refresh()
+                for i in range(0, 10):
+                    time.sleep(1)
                 if testClient.relogin():
-                    testClient.stop_websocket()
+                    testClient.close_websocket()
                     testClient.start_websocket(on_parameter_updated, False)
                 else:
                     logging.info("Failed to relogin")

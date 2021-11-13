@@ -43,6 +43,10 @@ class PelTecClient:
         self.http_client.get_notifications()
         return True
 
+    def stop_websocket(self) -> bool:
+        self.auto_reconnect = False
+        return self.close_websocket()
+
     def close_websocket(self) -> bool:
         try:
             if self.ws_client is not None:
@@ -55,7 +59,6 @@ class PelTecClient:
 
     def start_websocket(self, on_parameter_updated_callback, auto_reconnect : bool = False):
         self.logger.info("PelTecClient - Starting...")
-        self.close_websocket()
         self.ws_client = PelTecWsClient(self.ws_connected_callback, self.ws_disconnected_callback, self.ws_error_callback, self.ws_data_callback)
         self.on_parameter_updated_callback = on_parameter_updated_callback
         self.auto_reconnect = auto_reconnect
@@ -96,11 +99,6 @@ class PelTecClient:
     
     def ws_data_callback(self, ws, stomp_frame):        
         self.data.parse_real_time_frame(stomp_frame)
-
-    def stop_websocket(self):
-        self.auto_reconnect = False
-        if self.ws_client:
-            self.ws_client.close()
 
     def is_websocket_connected(self) -> bool:
         return self.websocket_connected
