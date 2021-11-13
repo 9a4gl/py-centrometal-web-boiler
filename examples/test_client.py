@@ -36,4 +36,12 @@ if __name__ == '__main__':
                 logging.info(f"{action} {serial} {name} = {value}")
             testClient.start_websocket(on_parameter_updated, False)
             while (True):
-                time.sleep(1)
+                for i in range(0, 10):
+                    time.sleep(1)
+                if testClient.relogin():
+                    testClient.stop_websocket()
+                    testClient.start_websocket(on_parameter_updated, False)
+                else:
+                    logging.info("Failed to relogin")
+                    sys.exit(1)
+

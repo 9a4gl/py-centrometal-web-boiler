@@ -21,9 +21,12 @@ class PelTecHttpClientBase:
         self.logger = logging.getLogger(__name__)
         self.username = username
         self.password = password
+        self.parameter_list = dict()
+        self.initialize_session()
+
+    def initialize_session(self):
         self.http_session = requests.Session()
         self.http_session.verify = PELTEC_WEB_CERTIFICATE_FILE
-        self.parameter_list = dict()
 
     def _http_get(self, url, expected_code = 200) -> html.HtmlElement:
         response = self.http_session.get(PELTEC_WEBROOT + url, headers = self.headers)

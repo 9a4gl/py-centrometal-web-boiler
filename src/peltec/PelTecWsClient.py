@@ -41,6 +41,9 @@ class PelTecWsClient:
         self.ws_thread.start()
         self.logger.info("PelTecWsClient starting...")
 
+    def close(self):
+        self.ws.close()
+
     def subscribe_to_notifications(self, ws):
         self.logger.info(f"PelTecWsClient::subscribe_to_notifications")
         topic = PELTEC_STOMP_NOTIFICATION_TOPIC

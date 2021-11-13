@@ -97,10 +97,14 @@ class PelTecClient:
     def ws_data_callback(self, ws, stomp_frame):        
         self.data.parse_real_time_frame(stomp_frame)
 
-    def stop(self):
+    def stop_websocket(self):
         self.auto_reconnect = False
         if self.ws_client:
             self.ws_client.close()
 
     def is_websocket_connected(self) -> bool:
         return self.websocket_connected
+
+    def relogin(self):
+        self.http_client.initialize_session()
+        return self.http_client.login()
