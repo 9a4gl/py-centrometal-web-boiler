@@ -10,11 +10,18 @@ import datetime
 from peltec.const import PELTEC_STOMP_DEVICE_TOPIC, PELTEC_STOMP_NOTIFICATION_TOPIC
 
 class PelTecParameter(dict):
+    def __init__(self):
+        self.update_callback = None
+
+    def set_update_callback(self, update_callback):
+        self.update_callback = update_callback
+
     def update(self, name, value, timestamp = None):
         self["name"] = name
         self["value"] = value
         self["timestamp"] = timestamp
-
+        if self.update_callback is not None:
+            self.update_callback(self)
 
 class PelTecDevice(dict):
     def __init__(self):
