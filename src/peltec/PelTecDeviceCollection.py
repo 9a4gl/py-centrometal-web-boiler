@@ -54,6 +54,15 @@ class PelTecDeviceCollection(dict):
     def set_on_update_callback(self, on_update_callback):
         self.on_update_callback = on_update_callback
 
+    def notify_all_updated(self):        
+        if self.on_update_callback is not None:
+            for device in self.values():
+                parameters = device["parameters"]
+                for parameter in parameters.values():
+                    self.on_update_callback(device, parameter, True)
+                    if parameter.update_callback is not None:
+                        parameter.update_callback(parameter)
+
     def get_device_by_id(self, id):
         for device in self.values():
             if str(id) == str(device["id"]):

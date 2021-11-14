@@ -80,15 +80,13 @@ class PelTecClient:
         self.ws_client.subscribe_to_notifications(ws)
         for serial in self.http_helper.get_all_devices_serials():
             self.ws_client.subscribe_to_installation(ws, serial)
-        for device in self.data.values():
-            parameters = device["parameters"]
-            for parameter in parameters.values():
-                self.on_parameter_updated_callback(device, parameter, True)
         self.data.set_on_update_callback(self.on_parameter_updated_callback)
+        self.data.notify_all_updated()
         self.refresh()
 
     def ws_disconnected_callback(self, ws, close_status_code, close_msg):
         self.websocket_connected = False
+        self.data.notify_all_updated()
         self.logger.warning(f"PelTecClient - disconnected close_status_code:{close_status_code} close_msg:{close_msg}")
         if self.auto_reconnect:
             self.logger.info("Webcocket reconnecting...")
