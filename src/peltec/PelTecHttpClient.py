@@ -60,8 +60,8 @@ class PelTecHttpClientBase:
     def _control_advanced(self, id, params) -> None:
         data = { "parameters": params }
         response = self._http_post_json('/api/inst/control/advanced/' + str(id), data=json.dumps(data))
-        self.logger.info("Sending advanced command {data}")
-        self.logger.info("Received advanced response {{{json.dumps(response)}}}")
+        self.logger.info(f"Sending advanced command {data}")
+        self.logger.info(f"Received advanced response {{{json.dumps(response)}}}")
 
 class PelTecHttpClient(PelTecHttpClientBase):
 
@@ -137,17 +137,10 @@ class PelTecHttpClient(PelTecHttpClientBase):
         data = { 'messages': { str(id): { 'RSTAT': "ALL" } } }
         self._control(data)
 
-    def get_active_table(self, id) -> None:
-        if "grid" in self.widgetgrid:
-            grid = json.loads(self.widgetgrid["grid"])
-            if "widgets" in grid:
-                widgets2 = grid["widgets2"]
-                if len(widgets2) > 0:
-                    for widget2 in widgets2:
-                        template = widget2["template"]
-                        if template == "v3.timetable":
-                            data = widget2["data"]
-                            activeTable = data["activeTable"]
-                            table = data["table"]
-                            params = { "PRD " + str(activeTable): "VAL", "PRD " + str(table): "ALV" }
-                            self._control_advanced(id, params)
+    def get_table_data(self, id, tableIndex) -> None:
+        params = { "PRD " + str(222): "VAL", "PRD " + str(222 + tableIndex): "ALV" }
+        self._control_advanced(id, params)
+
+    def get_table_data_all(self, id):
+        for i in range(1,4):
+            self.get_table_data(id, i)

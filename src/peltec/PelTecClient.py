@@ -37,6 +37,8 @@ class PelTecClient:
         self.http_client.get_installation_status_all(self.http_helper.get_all_devices_ids())
         for serial in self.http_helper.get_all_devices_serials():
             self.http_client.get_parameter_list(serial)
+        for id in self.http_helper.get_all_devices_ids():
+            self.http_client.get_table_data_all(id)
         self.data.parse_installations(self.http_client.installations)
         self.data.parse_installation_statuses(self.http_client.installation_status_all)
         self.data.parse_parameter_lists(self.http_client.parameter_list)
