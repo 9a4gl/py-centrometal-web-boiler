@@ -106,3 +106,8 @@ class PelTecClient:
     def relogin(self):
         self.http_client.initialize_session()
         return self.http_client.login()
+
+    def turn(self, serial, on):
+        device = self.data.get_device_by_serial(serial)
+        return self.http_client.turn_device_by_id(device["id"], on)
+        

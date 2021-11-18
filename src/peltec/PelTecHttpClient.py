@@ -29,13 +29,17 @@ class PelTecHttpClientBase:
         self.http_session.verify = PELTEC_WEB_CERTIFICATE_FILE
 
     def _http_get(self, url, expected_code = 200) -> html.HtmlElement:
-        response = self.http_session.get(PELTEC_WEBROOT + url, headers = self.headers)
+        full_url = PELTEC_WEBROOT + url
+        self.logger.info(f"GET {full_url}")
+        response = self.http_session.get(full_url, headers = self.headers)
         if response.status_code != expected_code:
             raise Exception(f"PelTecHttpClient::__get {url} failed with http code: {response.status_code}")
         return html.fromstring(response.text)
 
     def _http_post(self, url, data = None, expected_code = 200) -> html.HtmlElement:
-        response = self.http_session.post(PELTEC_WEBROOT + url, headers = self.headers, data = data)
+        full_url = PELTEC_WEBROOT + url
+        self.logger.info(f"POST {full_url}")
+        response = self.http_session.post(full_url, headers = self.headers, data = data)
         if response.status_code != expected_code:
             raise Exception(f"PelTecHttpClient::__post {url} failed with http code: {response.status_code}")
         try:
@@ -44,7 +48,9 @@ class PelTecHttpClientBase:
             raise Exception(f"PelTecHttpClient::__post {url} failed to parse html content: {response.text}")
 
     def _http_post_json(self, url, data = None, expected_code = 200) -> dict:
-        response = self.http_session.post(PELTEC_WEBROOT + url, headers = self.headers_json, data = data)
+        full_url = PELTEC_WEBROOT + url
+        self.logger.info(f"POST-json {full_url}")
+        response = self.http_session.post(full_url, headers = self.headers_json, data = data)
         if response.status_code != expected_code:
             raise Exception(f"PelTecHttpClient::_http_post_json {url} failed with http code: {response.status_code}")
         try:
@@ -52,16 +58,20 @@ class PelTecHttpClientBase:
         except:
             raise Exception(f"PelTecHttpClient::_http_post_json {url} failed to parse json content: {response.text}")
 
-    def _control(self, data) -> None:
+    def _control_multiple(self, data) -> None:
         response = self._http_post_json('/api/inst/control/multiple', data=json.dumps(data))
-        self.logger.info(f"Sending command {data}")
+        self.logger.info(f"Sending control multiple {data}")
         self.logger.info(f"Received response {{{json.dumps(response)}}}")
 
-    def _control_advanced(self, id, params) -> None:
-        data = { "parameters": params }
+    def _control(self, id, data) -> None:
+        response = self._http_post_json('/api/inst/control/' + str(id), data=json.dumps(data))
+        self.logger.info(f"Sending control {data}")
+        self.logger.info(f"Received response {{{json.dumps(response)}}}")
+
+    def _control_advanced(self, id, data) -> None:
         response = self._http_post_json('/api/inst/control/advanced/' + str(id), data=json.dumps(data))
-        self.logger.info(f"Sending advanced command {data}")
-        self.logger.info(f"Received advanced response {{{json.dumps(response)}}}")
+        self.logger.info(f"Sending control advanced {data}")
+        self.logger.info(f"Received response {{{json.dumps(response)}}}")
 
 class PelTecHttpClient(PelTecHttpClientBase):
 
@@ -131,16 +141,22 @@ class PelTecHttpClient(PelTecHttpClientBase):
 
     def refresh_device(self, id) -> None:
         data = { 'messages': { str(id): { 'REFRESH': 0 } } }
-        self._control(data)
+        self._control_multiple(data)
     
     def rstat_all_device(self, id) -> None:
         data = { 'messages': { str(id): { 'RSTAT': "ALL" } } }
-        self._control(data)
+        self._control_multiple(data)
 
     def get_table_data(self, id, tableIndex) -> None:
         params = { "PRD " + str(222): "VAL", "PRD " + str(222 + tableIndex): "ALV" }
-        self._control_advanced(id, params)
+        data = { "parameters": params }
+        self._control_advanced(id, data)
 
     def get_table_data_all(self, id):
         for i in range(1,4):
             self.get_table_data(id, i)
+
+    def turn_device_by_id(self, id, on):
+        cmd_value = 1 if on else 0
+        data = { "cmd-name": "CMD", "cmd-value": cmd_value }
+        self._control(id, data)

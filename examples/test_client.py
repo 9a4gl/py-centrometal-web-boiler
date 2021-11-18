@@ -8,6 +8,35 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../s
 
 import peltec
 
+def test_relogin(testClient):
+    while (True):
+        for i in range(0, 10):
+            time.sleep(1)
+        testClient.refresh()
+        for i in range(0, 10):
+            time.sleep(1)
+        if testClient.relogin():
+            testClient.close_websocket()
+            testClient.start_websocket(on_parameter_updated, False)
+        else:
+            logging.info("Failed to relogin")
+            sys.exit(0)
+
+def test_off_on(testClient):
+    for i in range(0, 5):
+        time.sleep(1)
+    print("Turning off")
+    for serial in testClient.data.keys():
+        testClient.turn(serial, False)
+    for i in range(0, 10):
+        time.sleep(1)
+    print("Turning on")
+    for serial in testClient.data.keys():
+        testClient.turn(serial, True)
+    for i in range(0, 10):
+        time.sleep(1)
+    sys.exit(0)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PelTec.')
     parser.add_argument('--username', help='Username')
@@ -35,16 +64,6 @@ if __name__ == '__main__':
                 value = param["value"]
                 logging.info(f"{action} {serial} {name} = {value}")
             testClient.start_websocket(on_parameter_updated, False)
-            while (True):
-                for i in range(0, 10):
-                    time.sleep(1)
-                testClient.refresh()
-                for i in range(0, 10):
-                    time.sleep(1)
-                if testClient.relogin():
-                    testClient.close_websocket()
-                    testClient.start_websocket(on_parameter_updated, False)
-                else:
-                    logging.info("Failed to relogin")
-                    sys.exit(1)
+            # test_relogin(testClient)
+            test_off_on(testClient)
 
