@@ -55,8 +55,9 @@ class PelTecWsClient:
         ws.send(stomper.subscribe(topic, "Peltec", "auto"))
 
     def on_websocket_message(self, ws, data):
-        if data == "\n":
-            ws.send("\n")
+        # Send new line to any frame (keep alive frame)
+        ws.send("\n")
+        if data == "\n": # We received keep alive frame, ignore it
             return
         frame = stomper.unpack_frame(data)
         if frame["cmd"] == "ERROR":
@@ -79,5 +80,5 @@ class PelTecWsClient:
 
     def on_websocket_open(self, ws):
         self.logger.info(f"PelTecWsClient::on_websocket_open -> connecting ...")
-        ws.send(stomper.connect(PELTEC_STOMP_LOGIN_USERNAME, PELTEC_STOMP_LOGIN_PASSCODE, "/", (10000, 10000)))
+        ws.send(stomper.connect(PELTEC_STOMP_LOGIN_USERNAME, PELTEC_STOMP_LOGIN_PASSCODE, "/", (90000, 60000)))
 
