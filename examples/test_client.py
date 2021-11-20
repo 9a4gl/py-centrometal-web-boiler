@@ -64,6 +64,6 @@ if __name__ == '__main__':
                 value = param["value"]
                 logging.info(f"{action} {serial} {name} = {value}")
             testClient.start_websocket(on_parameter_updated, False)
-            # test_relogin(testClient)
-            test_off_on(testClient)
+            test_relogin(testClient)
+            # test_off_on(testClient)
 

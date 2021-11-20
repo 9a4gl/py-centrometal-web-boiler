@@ -16,6 +16,7 @@ class PelTecClient:
         self.auto_reconnect = False
         self.websocket_connected = False
         self.ws_client = None
+        self.connectivity_callback = None
     
     def login(self, username, password):
         self.logger.info("PelTecClient - Logging in...")
@@ -79,6 +80,8 @@ class PelTecClient:
     def ws_connected_callback(self, ws, frame):
         self.logger.info("PelTecClient - connected")
         self.websocket_connected = True
+        if self.connectivity_callback is not None:
+            self.connectivity_callback(self.websocket_connected)
         self.ws_client.subscribe_to_notifications(ws)
         for serial in self.http_helper.get_all_devices_serials():
             self.ws_client.subscribe_to_installation(ws, serial)
@@ -88,6 +91,8 @@ class PelTecClient:
 
     def ws_disconnected_callback(self, ws, close_status_code, close_msg):
         self.websocket_connected = False
+        if self.connectivity_callback is not None:
+            self.connectivity_callback(self.websocket_connected)
         self.data.notify_all_updated()
         self.logger.warning(f"PelTecClient - disconnected close_status_code:{close_status_code} close_msg:{close_msg}")
         if self.auto_reconnect:
@@ -110,4 +115,6 @@ class PelTecClient:
     def turn(self, serial, on):
         device = self.data.get_device_by_serial(serial)
         return self.http_client.turn_device_by_id(device["id"], on)
-        
+
+    def set_connectivity_callback(self, connectivity_callback):
+        self.connectivity_callback = connectivity_callback
