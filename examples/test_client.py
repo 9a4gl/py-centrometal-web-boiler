@@ -2,27 +2,48 @@ import argparse
 import time
 import logging
 import os
+import asyncio
 
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
 import peltec
 
-def test_relogin(testClient):
-    while (True):
-        for i in range(0, 10):
-            time.sleep(1)
-        testClient.refresh()
-        for i in range(0, 10):
-            time.sleep(1)
-        if testClient.relogin():
-            testClient.close_websocket()
-            testClient.start_websocket(on_parameter_updated, False)
-        else:
-            logging.info("Failed to relogin")
-            sys.exit(0)
+loop = None
+testClient = None
 
-def test_off_on(testClient):
+def on_parameter_updated(device, param, create = False):
+    action = "Create" if create else "update"
+    serial = device["serial"]
+    name = param["name"]
+    value = param["value"]
+    logging.info(f"{action} {serial} {name} = {value}")
+
+def connectivity_callback(connected: bool):
+    global loop
+    global testClient
+    if connected:
+        asyncio.ensure_future(testClient.refresh(), loop=loop)
+
+async def test_relogin():
+    global loop
+    global testClient
+    while (True):
+        await asyncio.sleep(5)
+        await testClient.refresh()
+        await asyncio.sleep(5)
+        relogined = await testClient.relogin()
+        if not relogined:
+            logging.info("Failed to relogin")
+            return
+        testClient.close_websocket()
+        testClient.start_websocket(on_parameter_updated, False)
+        await asyncio.sleep(5)
+        break
+
+def test_off_on():
+    global loop
+    global testClient
     for i in range(0, 5):
         time.sleep(1)
     print("Turning off")
@@ -36,6 +57,29 @@ def test_off_on(testClient):
     for i in range(0, 10):
         time.sleep(1)
     sys.exit(0)
+
+async def main(username, password):
+    global loop
+    global testClient
+    loop = asyncio.get_running_loop()
+    testClient = peltec.PelTecClient()
+    testClient.set_connectivity_callback(connectivity_callback)
+
+    loggedIn = await testClient.login(username, password)
+    if not loggedIn:
+        logging.error("Failed to login")
+        return
+    
+    gotConfiguration = await testClient.get_configuration()
+    if not gotConfiguration:
+        logging.error("Failed to get configuration")
+        return
+
+    testClient.start_websocket(on_parameter_updated, False)
+
+    await test_relogin()
+
+    # test_off_on()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PelTec.')
@@ -51,19 +95,6 @@ if __name__ == '__main__':
             handlers=[ logging.StreamHandler()])
         logging.captureWarnings(True)
         
-        testClient = peltec.PelTecClient()
-        if not testClient.login(args.username, args.password):
-            logging.error("Failed to login")
-        elif not testClient.get_configuration():
-            logging.error("Failed to get configuration")
-        else:
-            def on_parameter_updated(device, param, create = False):
-                action = "Create" if create else "update"
-                serial = device["serial"]
-                name = param["name"]
-                value = param["value"]
-                logging.info(f"{action} {serial} {name} = {value}")
-            testClient.start_websocket(on_parameter_updated, False)
-            test_relogin(testClient)
-            # test_off_on(testClient)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(main(args.username, args.password))
 

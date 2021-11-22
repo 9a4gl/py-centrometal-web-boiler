@@ -4,6 +4,7 @@
 """
 
 import logging
+import asyncio
 
 from peltec.PelTecHttpClient import PelTecHttpClient
 from peltec.PelTecHttpHelper import PelTecHttpHelper
@@ -27,23 +28,24 @@ class PelTecClient:
         self.data = PelTecDeviceCollection()
         return self.http_client.login()
 
-    def get_configuration(self):
-        self.http_client.get_installations()
+    async def get_configuration(self):
+        await self.http_client.get_installations()
         if self.http_helper.get_device_count() == 0:
             self.logger.warning("PelTecClient - there is no installed device")
             return False
-        self.http_client.get_configuration()
-        self.http_client.get_widgetgrid_list()
-        self.http_client.get_widgetgrid(self.http_client.widgetgrid_list["selected"])
-        self.http_client.get_installation_status_all(self.http_helper.get_all_devices_ids())
-        for serial in self.http_helper.get_all_devices_serials():
-            self.http_client.get_parameter_list(serial)
-        for id in self.http_helper.get_all_devices_ids():
-            self.http_client.get_table_data_all(id)
         self.data.parse_installations(self.http_client.installations)
+        await asyncio.gather(self.http_client.get_configuration(), self.http_client.get_widgetgrid_list())
+        tasks = []
+        tasks.append(self.http_client.get_widgetgrid(self.http_client.widgetgrid_list["selected"]))
+        tasks.append(self.http_client.get_installation_status_all(self.http_helper.get_all_devices_ids()))
+        for serial in self.http_helper.get_all_devices_serials():
+            tasks.append(self.http_client.get_parameter_list(serial))
+        for id in self.http_helper.get_all_devices_ids():
+            tasks.extend(self.http_client.get_table_data_all(id))
+        tasks.append(self.http_client.get_notifications())
+        await asyncio.gather(*tasks)
         self.data.parse_installation_statuses(self.http_client.installation_status_all)
         self.data.parse_parameter_lists(self.http_client.parameter_list)
-        self.http_client.get_notifications()
         return True
 
     def stop_websocket(self) -> bool:
@@ -67,11 +69,13 @@ class PelTecClient:
         self.auto_reconnect = auto_reconnect
         self.ws_client.start()
 
-    def refresh(self) -> bool:
+    async def refresh(self) -> bool:
         try:
+            tasks = []
             for id in self.http_helper.get_all_devices_ids():
-                self.http_client.refresh_device(id)
-                self.http_client.rstat_all_device(id)
+                tasks.append(self.http_client.refresh_device(id))
+                tasks.append(self.http_client.rstat_all_device(id))
+            await asyncio.gather(*tasks)
             return True
         except Exception as e:
             self.logger.error("PelTecClient::refresh failed" + str(e))
@@ -87,7 +91,6 @@ class PelTecClient:
             self.ws_client.subscribe_to_installation(ws, serial)
         self.data.set_on_update_callback(self.on_parameter_updated_callback)
         self.data.notify_all_updated()
-        self.refresh()
 
     def ws_disconnected_callback(self, ws, close_status_code, close_msg):
         self.websocket_connected = False
@@ -108,9 +111,10 @@ class PelTecClient:
     def is_websocket_connected(self) -> bool:
         return self.websocket_connected
 
-    def relogin(self):
+    async def relogin(self):
+        await self.http_client.close_session()
         self.http_client.initialize_session()
-        return self.http_client.login()
+        return await self.http_client.login()
 
     def turn(self, serial, on):
         device = self.data.get_device_by_serial(serial)
