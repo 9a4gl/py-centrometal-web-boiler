@@ -5,8 +5,6 @@ from websockets import ConnectionClosedError
 
 from .base import BaseSocket
 from .models import Message, Object
-from .wsprotocols import WSCProtocol
-from .collector import EventCollector
 
 class ClientSocket(BaseSocket):
     def __init__(self):
@@ -18,8 +16,7 @@ class ClientSocket(BaseSocket):
         self.connection = None
         self.disconnection = None
     def connect(self, uri: str, ssl=None):
-        self.loop.run_until_complete(self.__main(uri, ssl))
-        self.loop.run_forever()
+        self.loop.create_task(self.__main(uri, ssl))
     async def on_message(self, message):
         pass
     async def __message_consumer(self):
@@ -63,10 +60,8 @@ class ClientSocket(BaseSocket):
                     pass
             except ValueError:
                 pass
-    def collector(self, time: float):
-        return EventCollector(websocket=self, time=time)
     async def __main(self, uri, ssl=None):
-        self.connection = await websockets.connect(uri, create_protocol=WSCProtocol, ssl=ssl)
+        self.connection = await websockets.connect(uri)
         self.loop.create_task(self.__on_connect())
         done, pending = await asyncio.wait([self.__message_consumer()], return_when=asyncio.ALL_COMPLETED)
         if ConnectionClosedError in [type(ret.result()) for ret in done]: return
@@ -75,7 +70,7 @@ class ClientSocket(BaseSocket):
                      self.__collector_verifier(futures, 'close', self.connection.close_code, self.connection.close_reason) 
                      for futures in self.listeners.close_collector
                     ])
-    async def send(self, content: typing.Any = None, *, data: dict = None):
-        await self.connection.send(content=content, data=data)
+    async def send(self, content):
+        await self.connection.send(content)
     async def close(self, code: int = 1000, reason: str = ''):
         await self.connection.close(code=code, reason=reason)
