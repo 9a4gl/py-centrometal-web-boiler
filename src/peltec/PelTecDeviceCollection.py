@@ -16,12 +16,15 @@ class PelTecParameter(dict):
     def set_update_callback(self, update_callback):
         self.update_callback = update_callback
 
-    def update(self, name, value, timestamp = None):
+    async def update(self, name, value, timestamp = None):
         self["name"] = name
         self["value"] = value
         self["timestamp"] = timestamp
+        await self.notify_updated()
+
+    async def notify_updated(self):
         if self.update_callback is not None:
-            self.update_callback(self)
+            await self.update_callback(self)
 
 class PelTecDevice(dict):
     def __init__(self):
@@ -33,7 +36,7 @@ class PelTecDevice(dict):
     def has_parameter(self, name):
         return name in self["parameters"].keys()
 
-    def update_parameter(self, name, value, timestamp = None) -> PelTecParameter:
+    async def update_parameter(self, name, value, timestamp = None) -> PelTecParameter:
         if timestamp == None:
             timestamp = int(time.time())
         else:
@@ -42,7 +45,7 @@ class PelTecDevice(dict):
         if name not in self["parameters"].keys():
             self["parameters"][name] = PelTecParameter()
         parameter = self["parameters"][name]
-        parameter.update(name, value, timestamp)
+        await parameter.update(name, value, timestamp)
         return parameter
 
 
@@ -54,14 +57,13 @@ class PelTecDeviceCollection(dict):
     def set_on_update_callback(self, on_update_callback):
         self.on_update_callback = on_update_callback
 
-    def notify_all_updated(self):        
+    async def notify_all_updated(self):
         if self.on_update_callback is not None:
             for device in self.values():
                 parameters = device["parameters"]
                 for parameter in parameters.values():
-                    self.on_update_callback(device, parameter, True)
-                    if parameter.update_callback is not None:
-                        parameter.update_callback(parameter)
+                    await self.on_update_callback(device, parameter, True)
+                    await parameter.notify_updated()
 
     def get_device_by_id(self, id):
         for device in self.values():
@@ -86,7 +88,7 @@ class PelTecDeviceCollection(dict):
             self[serial]["type"] = device["type"]
             self[serial]["product"] = device["product"]
 
-    def parse_installation_statuses(self, installation_status_all : dict()):
+    async def parse_installation_statuses(self, installation_status_all : dict()):
         for device_id, value in installation_status_all.items():
             device = self.get_device_by_id(device_id)
             for group, data in value.items():
@@ -95,7 +97,7 @@ class PelTecDeviceCollection(dict):
                     device["countryCode"] = data["countryCode"]
                 elif group == "params":
                     for param_id, param_data in data.items():
-                        device.update_parameter(param_id, param_data["v"], param_data["ut"])
+                        await device.update_parameter(param_id, param_data["v"], param_data["ut"])
                 else:
                     raise Exception(f"Unknown group in installation_status_all group:{group}")
             
@@ -125,15 +127,15 @@ class PelTecDeviceCollection(dict):
                 else:
                     raise Exception(f"Unknown data_id in parameter_list data_id:{data_id}")
 
-    def _update_device_with_real_time_data(self, device, body):
+    async def _update_device_with_real_time_data(self, device, body):
         data = json.loads(body)
         for param_id, value in data.items():
             if device.has_parameter(param_id):
-                parameter = device.update_parameter(param_id, value)
+                parameter = await device.update_parameter(param_id, value)
                 if self.on_update_callback is not None:
-                    self.on_update_callback(device, parameter)
+                    await self.on_update_callback(device, parameter)
 
-    def parse_real_time_frame(self, stomp_frame):
+    async def parse_real_time_frame(self, stomp_frame):
         if "headers" in stomp_frame and "body" in stomp_frame:
             headers = stomp_frame["headers"]
             body = stomp_frame["body"]
@@ -144,7 +146,7 @@ class PelTecDeviceCollection(dict):
                     if destination.startswith(PELTEC_STOMP_DEVICE_TOPIC):
                         serial = destination[len(PELTEC_STOMP_DEVICE_TOPIC):]
                         device = self.get_device_by_serial(serial)
-                        self._update_device_with_real_time_data(device, body)
+                        await self._update_device_with_real_time_data(device, body)
                     else:
                         raise Exception(f"Unexpected message for destination: {destination}")
                 elif subscription == PELTEC_STOMP_NOTIFICATION_TOPIC:

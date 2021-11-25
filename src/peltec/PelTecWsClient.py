@@ -3,10 +3,9 @@
 @author: Tihomir Heidelberg
 """
 
-import websocket
-import threading
 import logging
 import stomper
+import peltec.ws
 
 from peltec.const import (
     PELTEC_STOMP_LOGIN_USERNAME, 
@@ -17,68 +16,60 @@ from peltec.const import (
 
 class PelTecWsClient:
 
-    def __init__(self, connected_callback, disconnected_callback, error_callback, data_callback):
-        self.ws = None
-        self.ws_thread = None
+    def __init__(self, connected_callback, disconnected_callback, close_callback, data_callback):
         self.logger = logging.getLogger(__name__)
         self.connected_callback = connected_callback
         self.disconnected_callback = disconnected_callback
-        self.error_callback = error_callback
+        self.close_callback = close_callback
         self.data_callback = data_callback
+        self.client = peltec.ws.ClientSocket()
 
-    def start(self, enableWebSocketTracing = False):
-        websocket.enableTrace(enableWebSocketTracing)
-        self.ws = websocket.WebSocketApp(
-            PELTEC_STOMP_URL, 
-            on_message = self.on_websocket_message, 
-            on_error = self.on_websocket_error, 
-            on_close = self.on_websocket_closed)
-        self.ws.on_open = self.on_websocket_open
-        self.ws_thread = threading.Thread(
-            target = self.ws.run_forever, 
-            kwargs = {"ping_interval": 60, "ping_timeout": 5})
-        self.ws_thread.daemon = True
-        self.ws_thread.start()
-        self.logger.info("PelTecWsClient starting...")
+        @self.client.on('connect')        
+        async def on_connect():
+            self.logger.info(f"PelTecWsClient::on_connect -> stop connecting ...")
+            await self.client.send(stomper.connect(PELTEC_STOMP_LOGIN_USERNAME, PELTEC_STOMP_LOGIN_PASSCODE, "/", (90000, 60000)))
 
-    def close(self):
-        self.ws.close()
+        @self.client.on('message')
+        async def on_message(message):
+            data = message.data
+            # Send new line to any frame (keep alive frame)
+            await self.client.send("\n")
+            if data == "\n": # We received keep alive frame, ignore it
+                return
+            frame = stomper.unpack_frame(data)
+            if frame["cmd"] == "ERROR":
+                await self.error_callback(self.client, frame)
+                return
+            if frame["cmd"] == "CONNECTED":
+                self.logger.info(f"PelTecWsClient::on_message connected")
+                await self.connected_callback(self.client, frame)
+                return
+            self.logger.debug(f"PelTecWsClient::on_message {frame}")
+            await self.data_callback(self.client, frame)
 
-    def subscribe_to_notifications(self, ws):
+        @self.client.on('disconnect')
+        async def on_disconnect(code, reason):
+            self.logger.error(f"PelTecWsClient::on_disconnect - {code} - {reason}")
+            await self.disconnected_callback(self.client, code, reason)
+
+        @self.client.on("close")
+        async def on_close(code, reason):
+            self.logger.info(f"PelTecWsClient::on_close close_status_code:{code} close_msg:{reason}")
+            await self.disconnected_callback(self.client, code, reason)
+
+    async def start(self):
+        self.logger.info("PelTecWsClient connecting...")
+        self.client.connect(PELTEC_STOMP_URL)
+
+    async def close(self):
+        await self.client.close()
+
+    async def subscribe_to_notifications(self, ws):
         self.logger.info(f"PelTecWsClient::subscribe_to_notifications")
         topic = PELTEC_STOMP_NOTIFICATION_TOPIC
-        ws.send(stomper.subscribe(topic, "sub-0", "auto"))
+        await self.client.send(stomper.subscribe(topic, "sub-0", "auto"))
 
-    def subscribe_to_installation(self, ws, serial):
+    async def subscribe_to_installation(self, ws, serial):
         self.logger.info(f"PelTecWsClient::subscribe_to_installation {serial}")
         topic = PELTEC_STOMP_DEVICE_TOPIC + serial
-        ws.send(stomper.subscribe(topic, "Peltec", "auto"))
-
-    def on_websocket_message(self, ws, data):
-        # Send new line to any frame (keep alive frame)
-        ws.send("\n")
-        if data == "\n": # We received keep alive frame, ignore it
-            return
-        frame = stomper.unpack_frame(data)
-        if frame["cmd"] == "ERROR":
-            self.error_callback(ws, frame)
-            return
-        if frame["cmd"] == "CONNECTED":
-            self.logger.info(f"PelTecWsClient::on_websocket_message connected")
-            self.connected_callback(ws, frame)
-            return
-        self.logger.debug(f"PelTecWsClient::on_websocket_message {frame}")
-        self.data_callback(ws, frame)
-
-    def on_websocket_error(self, ws, err):
-        self.logger.error(f"PelTecWsClient::on_websocket_error - {err}")
-        self.error_callback(ws, err)
-
-    def on_websocket_closed(self, ws, close_status_code, close_msg):
-        self.logger.info(f"PelTecWsClient::on_websocket_closed close_status_code:{close_status_code} close_msg:{close_msg}")
-        self.disconnected_callback(ws, close_status_code, close_msg)
-
-    def on_websocket_open(self, ws):
-        self.logger.info(f"PelTecWsClient::on_websocket_open -> connecting ...")
-        ws.send(stomper.connect(PELTEC_STOMP_LOGIN_USERNAME, PELTEC_STOMP_LOGIN_PASSCODE, "/", (90000, 60000)))
-
+        await self.client.send(stomper.subscribe(topic, "Peltec", "auto"))

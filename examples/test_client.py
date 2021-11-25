@@ -12,14 +12,14 @@ import peltec
 loop = None
 testClient = None
 
-def on_parameter_updated(device, param, create = False):
+async def on_parameter_updated(device, param, create = False):
     action = "Create" if create else "update"
     serial = device["serial"]
     name = param["name"]
     value = param["value"]
     logging.info(f"{action} {serial} {name} = {value}")
 
-def connectivity_callback(connected: bool):
+async def connectivity_callback(connected: bool):
     global loop
     global testClient
     if connected:
@@ -36,26 +36,26 @@ async def test_relogin():
         if not relogined:
             logging.info("Failed to relogin")
             return
-        testClient.close_websocket()
-        testClient.start_websocket(on_parameter_updated, False)
+        await testClient.close_websocket()
+        await testClient.start_websocket(on_parameter_updated, False)
         await asyncio.sleep(5)
         break
 
-def test_off_on():
+async def test_off_on():
     global loop
     global testClient
     for i in range(0, 5):
-        time.sleep(1)
+        await asyncio.sleep(1)
     print("Turning off")
     for serial in testClient.data.keys():
-        testClient.turn(serial, False)
+        await testClient.turn(serial, False)
     for i in range(0, 10):
-        time.sleep(1)
+        await asyncio.sleep(1)
     print("Turning on")
     for serial in testClient.data.keys():
-        testClient.turn(serial, True)
+        await testClient.turn(serial, True)
     for i in range(0, 10):
-        time.sleep(1)
+        await asyncio.sleep(1)
     sys.exit(0)
 
 async def main(username, password):
@@ -75,11 +75,10 @@ async def main(username, password):
         logging.error("Failed to get configuration")
         return
 
-    testClient.start_websocket(on_parameter_updated, False)
+    await testClient.start_websocket(on_parameter_updated, False)
 
     await test_relogin()
-
-    # test_off_on()
+    # await test_off_on()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PelTec.')

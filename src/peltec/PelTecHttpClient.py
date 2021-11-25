@@ -5,13 +5,12 @@
 
 import logging
 import aiohttp
-import asyncio
 import json
 import sys
 import traceback
 from lxml import html
 
-from peltec.const import PELTEC_WEBROOT, PELTEC_WEB_CERTIFICATE_FILE
+from peltec.const import PELTEC_WEBROOT
 
 class PelTecHttpClientBase:
 
@@ -28,7 +27,6 @@ class PelTecHttpClientBase:
 
     def initialize_session(self):
         self.http_session = aiohttp.ClientSession()
-        self.http_session.verify = PELTEC_WEB_CERTIFICATE_FILE
 
     async def close_session(self):
         if self.http_session is not None:
@@ -170,4 +168,4 @@ class PelTecHttpClient(PelTecHttpClientBase):
     async def turn_device_by_id(self, id, on):
         cmd_value = 1 if on else 0
         data = { "cmd-name": "CMD", "cmd-value": cmd_value }
-        return self._control(id, data)
+        return await self._control(id, data)
