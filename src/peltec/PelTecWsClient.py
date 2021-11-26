@@ -5,7 +5,8 @@
 
 import logging
 import stomper
-import peltec.ws
+
+from .ws import ClientSocket
 
 from peltec.const import (
     PELTEC_STOMP_LOGIN_USERNAME, 
@@ -22,7 +23,7 @@ class PelTecWsClient:
         self.disconnected_callback = disconnected_callback
         self.close_callback = close_callback
         self.data_callback = data_callback
-        self.client = peltec.ws.ClientSocket()
+        self.client = ClientSocket()
 
         @self.client.on('connect')        
         async def on_connect():
