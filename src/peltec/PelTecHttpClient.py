@@ -35,7 +35,7 @@ class PelTecHttpClientBase:
     async def _http_get(self, url, expected_code = 200) -> html.HtmlElement:
         full_url = PELTEC_WEBROOT + url
         self.logger.info(f"GET {full_url}")
-        response = await self.http_session.get(full_url, headers = self.headers)
+        response = await self.http_session.get(full_url, headers=self.headers, ssl=False)
         if response.status != expected_code:
             raise Exception(f"PelTecHttpClient::__get {url} failed with http code: {response.status}")
         responseText = await response.text()
@@ -44,7 +44,7 @@ class PelTecHttpClientBase:
     async def _http_post(self, url, data = None, expected_code = 200) -> html.HtmlElement:
         full_url = PELTEC_WEBROOT + url
         self.logger.info(f"POST {full_url} -> {data}")
-        response = await self.http_session.post(full_url, headers = self.headers, data = data)
+        response = await self.http_session.post(full_url, headers=self.headers, data=data, ssl=False)
         if response.status != expected_code:
             raise Exception(f"PelTecHttpClient::__post {url} failed with http code: {response.status}")
         try:
@@ -56,7 +56,7 @@ class PelTecHttpClientBase:
     async def _http_post_json(self, url, data = None, expected_code = 200) -> dict:
         full_url = PELTEC_WEBROOT + url
         self.logger.info(f"POST-json {full_url} -> {data}")
-        response = await self.http_session.post(full_url, headers = self.headers_json, data = data)
+        response = await self.http_session.post(full_url, headers=self.headers_json, data=data, ssl=False)
         if response.status != expected_code:
             raise Exception(f"PelTecHttpClient::_http_post_json {url} failed with http code: {response.status}")
         try:
