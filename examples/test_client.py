@@ -37,7 +37,7 @@ async def test_relogin():
             logging.info("Failed to relogin")
             return
         await testClient.close_websocket()
-        await testClient.start_websocket(on_parameter_updated, False)
+        await testClient.start_websocket(on_parameter_updated)
         await asyncio.sleep(5)
         break
 
@@ -75,7 +75,7 @@ async def main(username, password):
         logging.error("Failed to get configuration")
         return
 
-    await testClient.start_websocket(on_parameter_updated, False)
+    await testClient.start_websocket(on_parameter_updated)
 
     await test_relogin()
     # await test_off_on()

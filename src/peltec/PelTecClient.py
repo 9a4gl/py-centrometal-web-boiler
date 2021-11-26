@@ -14,7 +14,6 @@ from peltec.PelTecDeviceCollection import PelTecDeviceCollection
 class PelTecClient:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.auto_reconnect = False
         self.websocket_connected = False
         self.connectivity_callback = None
         self.ws_client = PelTecWsClient(
@@ -50,10 +49,6 @@ class PelTecClient:
         self.data.parse_parameter_lists(self.http_client.parameter_list)
         return True
 
-    async def close_websocket_and_stop_reconnect(self) -> bool:
-        self.auto_reconnect = False
-        return await self.close_websocket()
-
     async def close_websocket(self) -> bool:
         try:
             await self.ws_client.close()
@@ -62,10 +57,9 @@ class PelTecClient:
             self.logger.error("PelTecClient::close_websocket failed" + str(e))
             return False
 
-    async def start_websocket(self, on_parameter_updated_callback, auto_reconnect : bool = False):
+    async def start_websocket(self, on_parameter_updated_callback):
         self.logger.info("PelTecClient - Starting websocket...")
         self.on_parameter_updated_callback = on_parameter_updated_callback
-        self.auto_reconnect = auto_reconnect
         await self.ws_client.start()
 
     async def refresh(self) -> bool:
@@ -97,9 +91,6 @@ class PelTecClient:
             await self.connectivity_callback(self.websocket_connected)
         await self.data.notify_all_updated()
         self.logger.warning(f"PelTecClient - disconnected close_status_code:{close_status_code} close_msg:{close_msg}")
-        if self.auto_reconnect:
-            self.logger.info("Webcocket reconnecting...")
-            await self.start(self.on_parameter_updated_callback)
 
     async def ws_error_callback(self, ws, err):
         self.logger.error(f"PelTecClient - error err:{err}")
