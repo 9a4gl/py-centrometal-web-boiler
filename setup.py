@@ -2,11 +2,11 @@ from setuptools import setup
 
 setup(
    name='py-peltec',
-   version='0.0.20',
+   version='0.0.21',
    description='Python library to interact with Centrometal Pel-Tec systems.',
    author='Tihomir Heidelberg',
    author_email='tihomir.heidelberg@lite.hr',
-   packages=['peltec', 'peltec.ws'],
+   packages=['peltec', 'peltec.ws', 'peltec.ws.exceptions', 'peltec.ws.models', 'peltec.ws.utils', 'peltec.ws.wsprotocols'],
    package_data={'peltec': ['certs.pem']},
    url="https://github.com/9a4gl/py-peltec",
    install_requires=[ "lxml>=4.6.4", "websockets>=10.1", "stomper>=0.4.3",
