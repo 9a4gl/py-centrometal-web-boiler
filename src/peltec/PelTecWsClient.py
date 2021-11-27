@@ -5,8 +5,8 @@
 
 import logging
 import stomper
-
-from .ws import ClientSocket
+import ssl
+import ws
 
 from peltec.const import (
     PELTEC_STOMP_LOGIN_USERNAME, 
@@ -23,7 +23,7 @@ class PelTecWsClient:
         self.disconnected_callback = disconnected_callback
         self.close_callback = close_callback
         self.data_callback = data_callback
-        self.client = ClientSocket()
+        self.client = ws.ClientSocket()
 
         @self.client.on('connect')        
         async def on_connect():
@@ -60,7 +60,8 @@ class PelTecWsClient:
 
     async def start(self):
         self.logger.info("PelTecWsClient connecting...")
-        self.client.connect(PELTEC_STOMP_URL)
+        # _ClientSocket__main is hack to call private method __main in ClientSocket
+        self.client.loop.create_task(self.client._ClientSocket__main(PELTEC_STOMP_URL,ssl=ssl.create_default_context()))
 
     async def close(self):
         await self.client.close()
