@@ -103,7 +103,7 @@ class PelTecClient:
 
     async def relogin(self):
         await self.http_client.close_session()
-        self.http_client.initialize_session()
+        await self.http_client.reinitialize_session()
         return await self.http_client.login()
 
     async def turn(self, serial, on):

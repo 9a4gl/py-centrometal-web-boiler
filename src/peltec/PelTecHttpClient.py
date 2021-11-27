@@ -23,9 +23,10 @@ class PelTecHttpClientBase:
         self.password = password
         self.parameter_list = dict()
         self.http_session = None
-        self.initialize_session()
+        self.http_session = aiohttp.ClientSession()
 
-    def initialize_session(self):
+    async def reinitialize_session(self):
+        await self.http_session.close()
         self.http_session = aiohttp.ClientSession()
 
     async def close_session(self):
