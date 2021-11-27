@@ -27,7 +27,7 @@ class PelTecWsClient:
 
         @self.client.on('connect')        
         async def on_connect():
-            self.logger.info(f"PelTecWsClient::on_connect -> stop connecting ...")
+            self.logger.info(f"PelTecWsClient::on_connect")
             await self.client.send(stomper.connect(PELTEC_STOMP_LOGIN_USERNAME, PELTEC_STOMP_LOGIN_PASSCODE, "/", (90000, 60000)))
 
         @self.client.on('message')
