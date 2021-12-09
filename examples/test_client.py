@@ -28,9 +28,9 @@ async def test_relogin():
     global loop
     global testClient
     while (True):
-        await asyncio.sleep(5)
+        await asyncio.sleep(50)
         await testClient.refresh()
-        await asyncio.sleep(5)
+        await asyncio.sleep(50)
         relogined = await testClient.relogin()
         if not relogined:
             logging.info("Failed to relogin")

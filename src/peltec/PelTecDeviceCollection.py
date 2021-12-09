@@ -36,6 +36,11 @@ class PelTecDevice(dict):
     def has_parameter(self, name):
         return name in self["parameters"].keys()
 
+    def getOrCreatePelTecParameter(self, name):
+        if not name in self["parameters"].keys():
+            self["parameters"][name] = PelTecParameter()
+        return self["parameters"][name]
+
     async def update_parameter(self, name, value, timestamp = None) -> PelTecParameter:
         if timestamp == None:
             timestamp = int(time.time())
@@ -44,7 +49,7 @@ class PelTecDevice(dict):
             timestamp = int(date_time_obj.replace(tzinfo=datetime.timezone.utc).timestamp())
         if name not in self["parameters"].keys():
             self["parameters"][name] = PelTecParameter()
-        parameter = self["parameters"][name]
+        parameter = self.getOrCreatePelTecParameter(name)
         await parameter.update(name, value, timestamp)
         return parameter
 
