@@ -47,8 +47,6 @@ class PelTecDevice(dict):
         else:
             date_time_obj = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
             timestamp = int(date_time_obj.replace(tzinfo=datetime.timezone.utc).timestamp())
-        if name not in self["parameters"].keys():
-            self["parameters"][name] = PelTecParameter()
         parameter = self.getOrCreatePelTecParameter(name)
         await parameter.update(name, value, timestamp)
         return parameter
