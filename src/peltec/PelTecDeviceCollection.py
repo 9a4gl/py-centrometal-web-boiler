@@ -11,10 +11,14 @@ from peltec.const import PELTEC_STOMP_DEVICE_TOPIC, PELTEC_STOMP_NOTIFICATION_TO
 
 class PelTecParameter(dict):
     def __init__(self):
-        self.update_callback = None
+        self.update_callbacks = dict()
 
-    def set_update_callback(self, update_callback):
-        self.update_callback = update_callback
+    def set_update_callback(self, update_callback, update_key = "default"):
+        if update_callback == None:
+            if update_key in self.update_callbacks.keys():
+                del self.update_callbacks[update_key]
+        else:
+            self.update_callbacks[update_key] = update_callback
 
     async def update(self, name, value, timestamp = None):
         self["name"] = name
@@ -23,8 +27,8 @@ class PelTecParameter(dict):
         await self.notify_updated()
 
     async def notify_updated(self):
-        if self.update_callback is not None:
-            await self.update_callback(self)
+        for callback in self.update_callbacks.values():
+            await callback(self)
 
 class PelTecDevice(dict):
     def __init__(self):
@@ -54,18 +58,23 @@ class PelTecDevice(dict):
 
 class PelTecDeviceCollection(dict):
 
-    def __init__(self, on_update_callback = None):
-        self.on_update_callback = on_update_callback
+    def __init__(self, on_update_callback = None, update_key = "default"):
+        self.on_update_callbacks = dict()
+        self.set_on_update_callback(on_update_callback, update_key)
 
-    def set_on_update_callback(self, on_update_callback):
-        self.on_update_callback = on_update_callback
+    def set_on_update_callback(self, on_update_callback, update_key = "default"):
+        if on_update_callback == None:
+            if update_key in self.on_update_callbacks.keys():
+                del self.on_update_callbacks[update_key]
+        else:
+            self.on_update_callbacks[update_key] = on_update_callback
 
     async def notify_all_updated(self):
-        if self.on_update_callback is not None:
+        for on_update_callback in self.on_update_callbacks.values():
             for device in self.values():
                 parameters = device["parameters"]
                 for parameter in parameters.values():
-                    await self.on_update_callback(device, parameter, True)
+                    await on_update_callback(device, parameter, True)
                     await parameter.notify_updated()
 
     def get_device_by_id(self, id):
@@ -135,8 +144,8 @@ class PelTecDeviceCollection(dict):
         for param_id, value in data.items():
             if device.has_parameter(param_id):
                 parameter = await device.update_parameter(param_id, value)
-                if self.on_update_callback is not None:
-                    await self.on_update_callback(device, parameter)
+                for on_update_callback in self.on_update_callbacks.values():
+                    await on_update_callback(device, parameter)
 
     async def parse_real_time_frame(self, stomp_frame):
         if "headers" in stomp_frame and "body" in stomp_frame:
