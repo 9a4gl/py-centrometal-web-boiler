@@ -43,6 +43,7 @@ class PelTecDevice(dict):
     def getOrCreatePelTecParameter(self, name):
         if not name in self["parameters"].keys():
             self["parameters"][name] = PelTecParameter()
+            self["parameters"][name]["name"] = name
         return self["parameters"][name]
 
     async def update_parameter(self, name, value, timestamp = None) -> PelTecParameter:
