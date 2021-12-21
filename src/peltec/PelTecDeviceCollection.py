@@ -36,6 +36,7 @@ class PelTecDevice(dict):
         self["temperatures"] = {}
         self["info"] = {}
         self["weather"] = {}
+        self["circuits"] = {}
 
     def has_parameter(self, name):
         return name in self["parameters"].keys()
@@ -135,6 +136,10 @@ class PelTecDeviceCollection(dict):
                             for list_item in data_value_item["list"]:
                                 index = list_item["naslov"]
                                 device["weather"][index] = list_item
+                        elif group == "Heating circuits":
+                            for list_item in data_value_item["list"]:
+                                index = list_item["naslov"]
+                                device["circuits"][index] = list_item
                         else:
                             raise Exception(f"Unknown group in parameter_list data_id:{group}")
                 else:
