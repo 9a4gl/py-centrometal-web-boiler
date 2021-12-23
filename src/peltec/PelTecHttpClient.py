@@ -155,15 +155,15 @@ class PelTecHttpClient(PelTecHttpClientBase):
         data = { 'messages': { str(id): { 'RSTAT': "ALL" } } }
         return await self._control_multiple(data)
 
-    async def get_table_data(self, id, tableIndex) -> None:
-        params = { "PRD " + str(222): "VAL", "PRD " + str(222 + tableIndex): "ALV" }
+    async def get_table_data(self, id, tableStartIndex, tableSubIndex) -> None:
+        params = { "PRD " + str(tableStartIndex): "VAL", "PRD " + str(tableStartIndex + tableSubIndex): "ALV" }
         data = { "parameters": params }
         return await self._control_advanced(id, data)
 
-    def get_table_data_all(self, id):
+    def get_table_data_all(self, id, tableStartIndex, tableSize):
         tasks = []
-        for i in range(1,4):
-            tasks.append(self.get_table_data(id, i))
+        for i in range(1, tableSize + 1):
+            tasks.append(self.get_table_data(id, tableStartIndex, i))
         return tasks
 
     async def turn_device_by_id(self, id, on):

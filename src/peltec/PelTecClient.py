@@ -41,8 +41,6 @@ class PelTecClient:
         tasks.append(self.http_client.get_installation_status_all(self.http_helper.get_all_devices_ids()))
         for serial in self.http_helper.get_all_devices_serials():
             tasks.append(self.http_client.get_parameter_list(serial))
-        for id in self.http_helper.get_all_devices_ids():
-            tasks.extend(self.http_client.get_table_data_all(id))
         tasks.append(self.http_client.get_notifications())
         await asyncio.gather(*tasks)
         await self.data.parse_installation_statuses(self.http_client.installation_status_all)
