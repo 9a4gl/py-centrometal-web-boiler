@@ -6,6 +6,7 @@
 import json
 import time
 import datetime
+import logging
 
 from peltec.const import PELTEC_STOMP_DEVICE_TOPIC, PELTEC_STOMP_NOTIFICATION_TOPIC
 
@@ -32,6 +33,7 @@ class PelTecParameter(dict):
 
 class PelTecDevice(dict):
     def __init__(self):
+        self.logger = logging.getLogger(__name__)
         self["parameters"] = {}
         self["temperatures"] = {}
         self["info"] = {}
@@ -41,11 +43,21 @@ class PelTecDevice(dict):
     def has_parameter(self, name):
         return name in self["parameters"].keys()
 
+    def createPelTecParameter(self, name, value = "?"):
+        self["parameters"][name] = PelTecParameter()
+        self["parameters"][name]["name"] = name
+        self["parameters"][name]["value"] = value
+        return self["parameters"][name]
+
+    def getPelTecParameter(self, name):
+        if not name in self["parameters"].keys():
+            self.logger.warn(f"PelTecDevice::getPelTecParameter parameter {name} does not exist, creating one")
+            return self.createPelTecParameter(name)
+        return self["parameters"][name]
+
     def getOrCreatePelTecParameter(self, name):
         if not name in self["parameters"].keys():
-            self["parameters"][name] = PelTecParameter()
-            self["parameters"][name]["name"] = name
-            self["parameters"][name]["value"] = "?"
+            return self.createPelTecParameter(name)
         return self["parameters"][name]
 
     async def update_parameter(self, name, value, timestamp = None) -> PelTecParameter:
@@ -62,6 +74,7 @@ class PelTecDevice(dict):
 class PelTecDeviceCollection(dict):
 
     def __init__(self, on_update_callback = None, update_key = "default"):
+        self.logger = logging.getLogger(__name__)
         self.on_update_callbacks = dict()
         self.set_on_update_callback(on_update_callback, update_key)
 
