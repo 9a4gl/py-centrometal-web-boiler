@@ -76,8 +76,9 @@ async def main(username, password):
 
     await testClient.start_websocket(on_parameter_updated)
 
-    await test_relogin()
+    # await test_relogin()
     # await test_off_on()
+    await asyncio.sleep(5000)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PelTec.')

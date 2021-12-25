@@ -58,7 +58,8 @@ class PelTecClient:
     async def start_websocket(self, on_parameter_updated_callback):
         self.logger.info("PelTecClient - Starting websocket...")
         self.on_parameter_updated_callback = on_parameter_updated_callback
-        await self.ws_client.start()
+        device = list(self.data.values())[0]
+        await self.ws_client.start(device["type"])
 
     async def refresh(self) -> bool:
         try:

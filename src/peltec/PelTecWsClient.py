@@ -18,6 +18,7 @@ from peltec.const import (
 class PelTecWsClient:
 
     def __init__(self, connected_callback, disconnected_callback, close_callback, data_callback):
+        self.type = "peltec"
         self.logger = logging.getLogger(__name__)
         self.connected_callback = connected_callback
         self.disconnected_callback = disconnected_callback
@@ -58,7 +59,8 @@ class PelTecWsClient:
             self.logger.info(f"PelTecWsClient::on_close close_status_code:{code} close_msg:{reason}")
             await self.disconnected_callback(self.client, code, reason)
 
-    async def start(self):
+    async def start(self, type):
+        self.type = type
         self.logger.info("PelTecWsClient connecting...")
         # _ClientSocket__main is hack to call private method __main in ClientSocket
         self.client.loop.create_task(self.client._ClientSocket__main(PELTEC_STOMP_URL,ssl=ssl.create_default_context()))
@@ -73,5 +75,5 @@ class PelTecWsClient:
 
     async def subscribe_to_installation(self, ws, serial):
         self.logger.info(f"PelTecWsClient::subscribe_to_installation {serial}")
-        topic = PELTEC_STOMP_DEVICE_TOPIC + serial
-        await self.client.send(stomper.subscribe(topic, "Peltec", "auto"))
+        topic = PELTEC_STOMP_DEVICE_TOPIC + self.type + "." + serial
+        await self.client.send(stomper.subscribe(topic, "sub-1", "auto"))

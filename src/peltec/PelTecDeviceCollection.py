@@ -174,9 +174,10 @@ class PelTecDeviceCollection(dict):
             if "subscription" in headers and "destination" in headers:
                 subscription = headers["subscription"]
                 destination = headers["destination"]
-                if subscription == "Peltec":
+                if subscription == "sub-1":
                     if destination.startswith(PELTEC_STOMP_DEVICE_TOPIC):
-                        serial = destination[len(PELTEC_STOMP_DEVICE_TOPIC):]
+                        dotpos = destination.rfind(".")
+                        serial = destination[dotpos+1:]
                         device = self.get_device_by_serial(serial)
                         await self._update_device_with_real_time_data(device, body)
                     else:
