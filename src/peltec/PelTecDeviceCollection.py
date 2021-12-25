@@ -43,21 +43,21 @@ class PelTecDevice(dict):
     def has_parameter(self, name):
         return name in self["parameters"].keys()
 
-    def create_peltec_parameter(self, name, value = "?"):
+    def create_parameter(self, name, value = "?"):
         self["parameters"][name] = PelTecParameter()
         self["parameters"][name]["name"] = name
         self["parameters"][name]["value"] = value
         return self["parameters"][name]
 
-    def get_peltec_parameter(self, name):
+    def get_parameter(self, name):
         if not name in self["parameters"].keys():
-            self.logger.warn(f"PelTecDevice::get_peltec_parameter parameter {name} does not exist, creating one")
-            return self.create_peltec_parameter(name)
+            self.logger.warn(f"PelTecDevice::get_parameter parameter {name} does not exist, creating one")
+            return self.create_parameter(name)
         return self["parameters"][name]
 
-    def get_or_create_peltec_parameter(self, name):
+    def get_or_create_parameter(self, name):
         if not name in self["parameters"].keys():
-            return self.create_peltec_parameter(name)
+            return self.create_parameter(name)
         return self["parameters"][name]
 
     async def update_parameter(self, name, value, timestamp = None) -> PelTecParameter:
@@ -66,7 +66,7 @@ class PelTecDevice(dict):
         else:
             date_time_obj = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
             timestamp = int(date_time_obj.replace(tzinfo=datetime.timezone.utc).timestamp())
-        parameter = self.get_or_create_peltec_parameter(name)
+        parameter = self.get_or_create_parameter(name)
         await parameter.update(name, value, timestamp)
         return parameter
 
