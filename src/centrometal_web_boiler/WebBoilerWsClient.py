@@ -62,10 +62,11 @@ class WebBoilerWsClient:
         self.type = type
         self.logger.info("WebBoilerWsClient connecting...")
         # _ClientSocket__main is hack to call private method __main in ClientSocket
-        self.client.loop.create_task(self.client._ClientSocket__main(WEB_BOILER_STOMP_URL,ssl=ssl.create_default_context()))
+        self.client.loop.create_task(self.client._ClientSocket__main(WEB_BOILER_STOMP_URL, ssl=ssl.create_default_context()))
 
     async def close(self):
-        await self.client.close()
+        if self.client.connection:
+            await self.client.close()
 
     async def subscribe_to_notifications(self, ws):
         self.logger.info(f"WebBoilerWsClient::subscribe_to_notifications")
