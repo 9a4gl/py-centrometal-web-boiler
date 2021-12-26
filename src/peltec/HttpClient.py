@@ -10,12 +10,12 @@ import sys
 import traceback
 from lxml import html
 
-from peltec.const import PELTEC_WEBROOT
+from peltec.const import WEB_BOILER_WEBROOT
 
-class PelTecHttpClientBase:
+class HttpClientBase:
 
-    headers = { "Origin": PELTEC_WEBROOT, "Referer": PELTEC_WEBROOT + "/" }
-    headers_json = { "Origin": PELTEC_WEBROOT, "Referer": PELTEC_WEBROOT + "/", "Content-Type": "application/json;charset=UTF-8" }
+    headers = { "Origin": WEB_BOILER_WEBROOT, "Referer": WEB_BOILER_WEBROOT + "/" }
+    headers_json = { "Origin": WEB_BOILER_WEBROOT, "Referer": WEB_BOILER_WEBROOT + "/", "Content-Type": "application/json;charset=UTF-8" }
 
     def __init__(self, username, password):
         self.logger = logging.getLogger(__name__)
@@ -34,37 +34,37 @@ class PelTecHttpClientBase:
             await self.http_session.close()
 
     async def _http_get(self, url, expected_code = 200) -> html.HtmlElement:
-        full_url = PELTEC_WEBROOT + url
+        full_url = WEB_BOILER_WEBROOT + url
         self.logger.info(f"GET {full_url}")
         response = await self.http_session.get(full_url, headers=self.headers, ssl=False)
         if response.status != expected_code:
-            raise Exception(f"PelTecHttpClient::__get {url} failed with http code: {response.status}")
+            raise Exception(f"HttpClientBase::__get {url} failed with http code: {response.status}")
         responseText = await response.text()
         return html.fromstring(responseText)
 
     async def _http_post(self, url, data = None, expected_code = 200) -> html.HtmlElement:
-        full_url = PELTEC_WEBROOT + url
+        full_url = WEB_BOILER_WEBROOT + url
         self.logger.info(f"POST {full_url} -> {data}")
         response = await self.http_session.post(full_url, headers=self.headers, data=data, ssl=False)
         if response.status != expected_code:
-            raise Exception(f"PelTecHttpClient::__post {url} failed with http code: {response.status}")
+            raise Exception(f"HttpClientBase::__post {url} failed with http code: {response.status}")
         try:
             responseText = await response.text()
             return html.fromstring(responseText)
         except:
-            raise Exception(f"PelTecHttpClient::__post {url} failed to parse html content: {responseText}")
+            raise Exception(f"HttpClientBase::__post {url} failed to parse html content: {responseText}")
 
     async def _http_post_json(self, url, data = None, expected_code = 200) -> dict:
-        full_url = PELTEC_WEBROOT + url
+        full_url = WEB_BOILER_WEBROOT + url
         self.logger.info(f"POST-json {full_url} -> {data}")
         response = await self.http_session.post(full_url, headers=self.headers_json, data=data, ssl=False)
         if response.status != expected_code:
-            raise Exception(f"PelTecHttpClient::_http_post_json {url} failed with http code: {response.status}")
+            raise Exception(f"HttpClientBase::_http_post_json {url} failed with http code: {response.status}")
         try:
             responseText = await response.text()
             return json.loads(responseText)
         except:
-            raise Exception(f"PelTecHttpClient::_http_post_json {url} failed to parse json content: {responseText}")
+            raise Exception(f"HttpClientBase::_http_post_json {url} failed to parse json content: {responseText}")
 
     async def _control_multiple(self, data) -> None:
         response = await self._http_post_json('/api/inst/control/multiple', data=json.dumps(data))
@@ -81,22 +81,22 @@ class PelTecHttpClientBase:
         self.logger.info(f"Sending control advanced {data}")
         self.logger.info(f"Received response {{{json.dumps(response)}}}")
 
-class PelTecHttpClient(PelTecHttpClientBase):
+class HttpClient(HttpClientBase):
 
     async def __get_csrf_token(self) -> None:
-        self.logger.info("PelTecHttpClient - Fetching getCsrfToken")
+        self.logger.info("HttpClient - Fetching getCsrfToken")
         html_doc = await self._http_get("/login")
         input_element = html_doc.xpath("//input[@name=\"_csrf_token\"]")
         if len(input_element) != 1:
-            raise Exception("PelTecHttpClient::getCsrfToken failed - cannot find csrf token")
+            raise Exception("HttpClient::getCsrfToken failed - cannot find csrf token")
         values = input_element[0].xpath('@value')
         if len(values) != 1:
-            raise Exception("PelTecHttpClient::getCsrfToken  failed - cannot find csrf token vaue")
-        self.logger.info(f"PelTecHttpClient - csrf_token: {values[0]}")
+            raise Exception("HttpClient::getCsrfToken  failed - cannot find csrf token vaue")
+        self.logger.info(f"HttpClient - csrf_token: {values[0]}")
         self.csrf_token = values[0]
 
     async def __login_check(self) -> None:
-        self.logger.info("PelTecHttpClient - Logging in...")
+        self.logger.info("HttpClient - Logging in...")
         data = dict()
         data["_csrf_token"] = self.csrf_token
         data["_username"] = self.username
@@ -105,8 +105,8 @@ class PelTecHttpClient(PelTecHttpClientBase):
         html_doc = await self._http_post('/login_check', data=data)
         loading_div_element = html_doc.xpath("//div[@id=\"id-loading-screen-blackout\"]")
         if len(loading_div_element) != 1:
-            raise Exception("PelTecHttpClient::__loginCheck cannot find loading div element")
-        self.logger.info("PelTecHttpClient - Login successfull")
+            raise Exception("HttpClient::__loginCheck cannot find loading div element")
+        self.logger.info("HttpClient - Login successfull")
 
     async def login(self) -> bool:
         try:
@@ -125,11 +125,11 @@ class PelTecHttpClient(PelTecHttpClientBase):
     async def get_installations(self):
         self.installations = await self._http_post_json("/data/autocomplete/installation", data=json.dumps({}))
         self.installations = self.installations["installations"]
-        self.logger.debug("PelTecHttpClient::get_installations -> " + json.dumps(self.installations, indent=4))
+        self.logger.debug("HttpClient::get_installations -> " + json.dumps(self.installations, indent=4))
 
     async def get_configuration(self) -> None:
         self.configuration = await self._http_post_json('/api/configuration', data=json.dumps({}))
-        self.logger.debug("PelTecHttpClient::get_configuration configuration -> " + json.dumps(self.configuration, indent=4))
+        self.logger.debug("HttpClient::get_configuration configuration -> " + json.dumps(self.configuration, indent=4))
         
     async def get_widgetgrid_list(self) -> None:
         self.widgetgrid_list = await self._http_post_json('/api/widgets-grid/list', data=json.dumps({}))
@@ -141,11 +141,11 @@ class PelTecHttpClient(PelTecHttpClientBase):
     async def get_installation_status_all(self, ids : list) -> None:
         data = { "installations": ids }
         self.installation_status_all = await self._http_post_json('/wdata/data/installation-status-all', data=json.dumps(data))
-        self.logger.debug("PelTecHttpClient::get_installation_status_all -> " + json.dumps(self.installation_status_all, indent=4))
+        self.logger.debug("HttpClient::get_installation_status_all -> " + json.dumps(self.installation_status_all, indent=4))
 
     async def get_parameter_list(self, serial) -> None:
         self.parameter_list[serial] = await self._http_post_json('/wdata/data/parameter-list/' + serial, data=json.dumps({}))
-        self.logger.debug("PelTecHttpClient::get_parameter_list -> " + json.dumps(self.parameter_list[serial], indent=4))
+        self.logger.debug("HttpClient::get_parameter_list -> " + json.dumps(self.parameter_list[serial], indent=4))
 
     async def refresh_device(self, id) -> None:
         data = { 'messages': { str(id): { 'REFRESH': 0 } } }

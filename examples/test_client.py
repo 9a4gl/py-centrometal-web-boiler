@@ -61,7 +61,7 @@ async def main(username, password):
     global loop
     global testClient
     loop = asyncio.get_running_loop()
-    testClient = peltec.PelTecClient()
+    testClient = peltec.WebBoilerClient()
     testClient.set_connectivity_callback(connectivity_callback)
 
     loggedIn = await testClient.login(username, password)
@@ -81,7 +81,7 @@ async def main(username, password):
     await asyncio.sleep(5000)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='PelTec.')
+    parser = argparse.ArgumentParser(description='WebBoiler.')
     parser.add_argument('--username', help='Username')
     parser.add_argument('--password', help='Password')
     args = parser.parse_args()

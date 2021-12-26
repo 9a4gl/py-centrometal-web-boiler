@@ -1,6 +1,6 @@
 # py-peltec
 
-Python library to interact with Centrometal PelTec systems.
+Python library to interact with Centrometal boiler systems.
 
 ### Important
 

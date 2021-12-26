@@ -6,33 +6,33 @@
 import logging
 import asyncio
 
-from peltec.PelTecHttpClient import PelTecHttpClient
-from peltec.PelTecHttpHelper import PelTecHttpHelper
-from peltec.PelTecWsClient import PelTecWsClient
-from peltec.PelTecDeviceCollection import PelTecDeviceCollection
+from peltec.HttpClient import HttpClient
+from peltec.HttpHelper import HttpHelper
+from peltec.WebBoilerWsClient import WebBoilerWsClient
+from peltec.WebBoilerDeviceCollection import WebBoilerDeviceCollection
 
-class PelTecClient:
+class WebBoilerClient:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.websocket_connected = False
         self.connectivity_callback = None
-        self.ws_client = PelTecWsClient(
+        self.ws_client = WebBoilerWsClient(
             self.ws_connected_callback, self.ws_disconnected_callback, 
             self.ws_error_callback, self.ws_data_callback)
     
     async def login(self, username, password):
-        self.logger.info("PelTecClient - Logging in...")
+        self.logger.info("WebBoilerClient - Logging in...")
         self.username = username
         self.password = password
-        self.http_client = PelTecHttpClient(self.username, self.password)
-        self.http_helper = PelTecHttpHelper(self.http_client)
-        self.data = PelTecDeviceCollection()
+        self.http_client = HttpClient(self.username, self.password)
+        self.http_helper = HttpHelper(self.http_client)
+        self.data = WebBoilerDeviceCollection()
         return await self.http_client.login()
 
     async def get_configuration(self):
         await self.http_client.get_installations()
         if self.http_helper.get_device_count() == 0:
-            self.logger.warning("PelTecClient - there is no installed device")
+            self.logger.warning("WebBoilerClient - there is no installed device")
             return False
         self.data.parse_installations(self.http_client.installations)
         await asyncio.gather(self.http_client.get_configuration(), self.http_client.get_widgetgrid_list())
@@ -52,11 +52,11 @@ class PelTecClient:
             await self.ws_client.close()
             return True
         except Exception as e:
-            self.logger.error("PelTecClient::close_websocket failed" + str(e))
+            self.logger.error("WebBoilerClient::close_websocket failed" + str(e))
             return False
 
     async def start_websocket(self, on_parameter_updated_callback):
-        self.logger.info("PelTecClient - Starting websocket...")
+        self.logger.info("WebBoilerClient - Starting websocket...")
         self.on_parameter_updated_callback = on_parameter_updated_callback
         device = list(self.data.values())[0]
         await self.ws_client.start(device["type"])
@@ -70,11 +70,11 @@ class PelTecClient:
             await asyncio.gather(*tasks)
             return True
         except Exception as e:
-            self.logger.error("PelTecClient::refresh failed" + str(e))
+            self.logger.error("WebBoilerClient::refresh failed" + str(e))
             return False
 
     async def ws_connected_callback(self, ws, frame):
-        self.logger.info("PelTecClient - connected")
+        self.logger.info("WebBoilerClient - connected")
         self.websocket_connected = True
         if self.connectivity_callback is not None:
             await self.connectivity_callback(self.websocket_connected)
@@ -89,10 +89,10 @@ class PelTecClient:
         if self.connectivity_callback is not None:
             await self.connectivity_callback(self.websocket_connected)
         await self.data.notify_all_updated()
-        self.logger.warning(f"PelTecClient - disconnected close_status_code:{close_status_code} close_msg:{close_msg}")
+        self.logger.warning(f"WebBoilerClient - disconnected close_status_code:{close_status_code} close_msg:{close_msg}")
 
     async def ws_error_callback(self, ws, err):
-        self.logger.error(f"PelTecClient - error err:{err}")
+        self.logger.error(f"WebBoilerClient - error err:{err}")
     
     async def ws_data_callback(self, ws, stomp_frame):        
         await self.data.parse_real_time_frame(stomp_frame)

@@ -5,10 +5,10 @@
 
 import os
 
-PELTEC_WEBROOT = 'https://www.web-boiler.com'
+WEB_BOILER_WEBROOT = 'https://www.web-boiler.com'
 
-PELTEC_STOMP_LOGIN_USERNAME = "appuser"
-PELTEC_STOMP_LOGIN_PASSCODE = "appuser"
-PELTEC_STOMP_URL = 'wss://web-boiler.com:15671/ws'
-PELTEC_STOMP_DEVICE_TOPIC = "/topic/cm.inst."
-PELTEC_STOMP_NOTIFICATION_TOPIC = "/queue/notification"
+WEB_BOILER_STOMP_LOGIN_USERNAME = "appuser"
+WEB_BOILER_STOMP_LOGIN_PASSCODE = "appuser"
+WEB_BOILER_STOMP_URL = 'wss://web-boiler.com:15671/ws'
+WEB_BOILER_STOMP_DEVICE_TOPIC = "/topic/cm.inst."
+WEB_BOILER_STOMP_NOTIFICATION_TOPIC = "/queue/notification"

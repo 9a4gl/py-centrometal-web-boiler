@@ -8,9 +8,9 @@ import time
 import datetime
 import logging
 
-from peltec.const import PELTEC_STOMP_DEVICE_TOPIC, PELTEC_STOMP_NOTIFICATION_TOPIC
+from peltec.const import WEB_BOILER_STOMP_DEVICE_TOPIC, WEB_BOILER_STOMP_NOTIFICATION_TOPIC
 
-class PelTecParameter(dict):
+class WebBoilerParameter(dict):
     def __init__(self):
         self.update_callbacks = dict()
 
@@ -31,7 +31,7 @@ class PelTecParameter(dict):
         for callback in self.update_callbacks.values():
             await callback(self)
 
-class PelTecDevice(dict):
+class WebBoilerDevice(dict):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self["parameters"] = {}
@@ -44,14 +44,14 @@ class PelTecDevice(dict):
         return name in self["parameters"].keys()
 
     def create_parameter(self, name, value = "?"):
-        self["parameters"][name] = PelTecParameter()
+        self["parameters"][name] = WebBoilerParameter()
         self["parameters"][name]["name"] = name
         self["parameters"][name]["value"] = value
         return self["parameters"][name]
 
     def get_parameter(self, name):
         if not name in self["parameters"].keys():
-            self.logger.warn(f"PelTecDevice::get_parameter parameter {name} does not exist, creating one")
+            self.logger.warn(f"WebBoilerDevice::get_parameter parameter {name} does not exist, creating one")
             return self.create_parameter(name)
         return self["parameters"][name]
 
@@ -60,7 +60,7 @@ class PelTecDevice(dict):
             return self.create_parameter(name)
         return self["parameters"][name]
 
-    async def update_parameter(self, name, value, timestamp = None) -> PelTecParameter:
+    async def update_parameter(self, name, value, timestamp = None) -> WebBoilerParameter:
         if timestamp == None:
             timestamp = int(time.time())
         else:
@@ -71,7 +71,7 @@ class PelTecDevice(dict):
         return parameter
 
 
-class PelTecDeviceCollection(dict):
+class WebBoilerDeviceCollection(dict):
 
     def __init__(self, on_update_callback = None, update_key = "default"):
         self.logger = logging.getLogger(__name__)
@@ -108,7 +108,7 @@ class PelTecDeviceCollection(dict):
     def parse_installations(self, installations : dict()):
         for device in installations:
             serial = device["label"]
-            self[serial] = PelTecDevice()
+            self[serial] = WebBoilerDevice()
             self[serial]["id"] = device["value"]
             self[serial]["serial"] = device["label"]
             self[serial]["place"] = device["place"]
@@ -175,14 +175,14 @@ class PelTecDeviceCollection(dict):
                 subscription = headers["subscription"]
                 destination = headers["destination"]
                 if subscription == "sub-1":
-                    if destination.startswith(PELTEC_STOMP_DEVICE_TOPIC):
+                    if destination.startswith(WEB_BOILER_STOMP_DEVICE_TOPIC):
                         dotpos = destination.rfind(".")
                         serial = destination[dotpos+1:]
                         device = self.get_device_by_serial(serial)
                         await self._update_device_with_real_time_data(device, body)
                     else:
                         raise Exception(f"Unexpected message for destination: {destination}")
-                elif subscription == PELTEC_STOMP_NOTIFICATION_TOPIC:
+                elif subscription == WEB_BOILER_STOMP_NOTIFICATION_TOPIC:
                     self.logger.info(f"Notification received: {body}")
                 else:
                     raise Exception(f"Unexpected message for subscription: {subscription}")

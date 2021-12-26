@@ -2,8 +2,8 @@ from setuptools import setup
 
 setup(
    name='py-peltec',
-   version='0.0.35',
-   description='Python library to interact with Centrometal Pel-Tec systems.',
+   version='0.0.36',
+   description='Python library to interact with Centrometal boiler systems.',
    author='Tihomir Heidelberg',
    author_email='tihomir.heidelberg@lite.hr',
    packages=['peltec'],
