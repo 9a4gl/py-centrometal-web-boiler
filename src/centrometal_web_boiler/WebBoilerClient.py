@@ -6,10 +6,10 @@
 import logging
 import asyncio
 
-from peltec.HttpClient import HttpClient
-from peltec.HttpHelper import HttpHelper
-from peltec.WebBoilerWsClient import WebBoilerWsClient
-from peltec.WebBoilerDeviceCollection import WebBoilerDeviceCollection
+from centrometal_web_boiler.HttpClient import HttpClient
+from centrometal_web_boiler.HttpHelper import HttpHelper
+from centrometal_web_boiler.WebBoilerWsClient import WebBoilerWsClient
+from centrometal_web_boiler.WebBoilerDeviceCollection import WebBoilerDeviceCollection
 
 class WebBoilerClient:
     def __init__(self):

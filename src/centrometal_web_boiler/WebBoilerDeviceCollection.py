@@ -8,7 +8,7 @@ import time
 import datetime
 import logging
 
-from peltec.const import WEB_BOILER_STOMP_DEVICE_TOPIC, WEB_BOILER_STOMP_NOTIFICATION_TOPIC
+from centrometal_web_boiler.const import WEB_BOILER_STOMP_DEVICE_TOPIC, WEB_BOILER_STOMP_NOTIFICATION_TOPIC
 
 class WebBoilerParameter(dict):
     def __init__(self):

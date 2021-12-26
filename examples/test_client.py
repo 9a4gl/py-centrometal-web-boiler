@@ -6,7 +6,7 @@ import asyncio
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
-import peltec
+import centrometal_web_boiler
 
 loop = None
 testClient = None
@@ -61,7 +61,7 @@ async def main(username, password):
     global loop
     global testClient
     loop = asyncio.get_running_loop()
-    testClient = peltec.WebBoilerClient()
+    testClient = centrometal_web_boiler.WebBoilerClient()
     testClient.set_connectivity_callback(connectivity_callback)
 
     loggedIn = await testClient.login(username, password)

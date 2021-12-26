@@ -3,7 +3,7 @@
 @author: Tihomir Heidelberg
 """
 
-from peltec.HttpClient import HttpClient
+from centrometal_web_boiler.HttpClient import HttpClient
 
 class HttpHelper:
     def __init__(self, client : HttpClient):

@@ -8,7 +8,7 @@ import stomper
 import ssl
 import ws
 
-from peltec.const import (
+from centrometal_web_boiler.const import (
     WEB_BOILER_STOMP_LOGIN_USERNAME, 
     WEB_BOILER_STOMP_LOGIN_PASSCODE, 
     WEB_BOILER_STOMP_URL, 
@@ -18,7 +18,6 @@ from peltec.const import (
 class WebBoilerWsClient:
 
     def __init__(self, connected_callback, disconnected_callback, close_callback, data_callback):
-        self.type = "peltec"
         self.logger = logging.getLogger(__name__)
         self.connected_callback = connected_callback
         self.disconnected_callback = disconnected_callback

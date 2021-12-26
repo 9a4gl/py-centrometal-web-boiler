@@ -10,7 +10,7 @@ import sys
 import traceback
 from lxml import html
 
-from peltec.const import WEB_BOILER_WEBROOT
+from centrometal_web_boiler.const import WEB_BOILER_WEBROOT
 
 class HttpClientBase:
 
