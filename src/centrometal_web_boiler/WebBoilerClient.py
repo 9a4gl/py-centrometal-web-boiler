@@ -109,5 +109,9 @@ class WebBoilerClient:
         device = self.data.get_device_by_serial(serial)
         return await self.http_client.turn_device_by_id(device["id"], on)
 
+    async def turn_circuit(self, serial, circuit, on):
+        device = self.data.get_device_by_serial(serial)
+        return await self.http_client.turn_device_circuit(device["id"], circuit, on)
+
     def set_connectivity_callback(self, connectivity_callback):
         self.connectivity_callback = connectivity_callback

@@ -170,3 +170,10 @@ class HttpClient(HttpClientBase):
         cmd_value = 1 if on else 0
         data = { "cmd-name": "CMD", "cmd-value": cmd_value }
         return await self._control(id, data)
+
+    async def turn_device_circuit(self, id, circuit, on):
+        cmd_name = "PWR " + str(circuit)
+        cmd_value = 1 if on else 0
+        data = { cmd_name: cmd_value }
+        data = { 'messages': { str(id): { cmd_name: cmd_value } } }
+        return await self._control_multiple(data)

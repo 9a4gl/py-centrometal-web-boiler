@@ -57,6 +57,23 @@ async def test_off_on():
         await asyncio.sleep(1)
     sys.exit(0)
 
+async def test_circuit_off_on(circuit):
+    global loop
+    global testClient
+    for i in range(0, 5):
+        await asyncio.sleep(1)
+    print("Turning circuit off")
+    for serial in testClient.data.keys():
+        await testClient.turn_circuit(serial, circuit, False)
+    for i in range(0, 10):
+        await asyncio.sleep(1)
+    print("Turning on")
+    for serial in testClient.data.keys():
+        await testClient.turn_circuit(serial, circuit, True)
+    for i in range(0, 10):
+        await asyncio.sleep(1)
+    sys.exit(0)
+
 async def main(username, password):
     global loop
     global testClient
@@ -78,6 +95,7 @@ async def main(username, password):
 
     # await test_relogin()
     # await test_off_on()
+    # await test_circuit_off_on(72)
     await asyncio.sleep(5000)
 
 if __name__ == '__main__':
