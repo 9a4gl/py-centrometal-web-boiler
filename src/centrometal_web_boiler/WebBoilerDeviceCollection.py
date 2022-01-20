@@ -39,6 +39,7 @@ class WebBoilerDevice(dict):
         self["info"] = {}
         self["weather"] = {}
         self["circuits"] = {}
+        self["widgets"] = {}
 
     def has_parameter(self, name):
         return name in self["parameters"].keys()
@@ -59,6 +60,12 @@ class WebBoilerDevice(dict):
         if not name in self["parameters"].keys():
             return self.create_parameter(name)
         return self["parameters"][name]
+
+    def get_widget_by_template(self, template):
+        for widget in self["widgets"].values():
+            if widget["template"] == template:
+                return widget
+        return None
 
     async def update_parameter(self, name, value, timestamp = None) -> WebBoilerParameter:
         if timestamp == None:
@@ -158,6 +165,17 @@ class WebBoilerDeviceCollection(dict):
                             raise Exception(f"Unknown group in parameter_list data_id:{group}")
                 else:
                     raise Exception(f"Unknown data_id in parameter_list data_id:{data_id}")
+
+    def parse_grid(self, http_client):
+        http_client.grid = json.loads(http_client.widgetgrid["grid"])
+        if "widgets" in http_client.grid:
+            for widget in http_client.grid["widgets"]:
+                device = self.get_device_by_id(widget["data"]["installation"])
+                device["widgets"][widget["id"]] = widget
+        if "widgets2" in http_client.grid:
+            for widget in http_client.grid["widgets2"]:
+                device = self.get_device_by_id(widget["data"]["installation"])
+                device["widgets"][widget["id"]] = widget
 
     async def _update_device_with_real_time_data(self, device, body):
         data = json.loads(body)

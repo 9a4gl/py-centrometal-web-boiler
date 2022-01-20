@@ -45,6 +45,7 @@ class WebBoilerClient:
         await asyncio.gather(*tasks)
         await self.data.parse_installation_statuses(self.http_client.installation_status_all)
         self.data.parse_parameter_lists(self.http_client.parameter_list)
+        self.data.parse_grid(self.http_client)
         return True
 
     async def close_websocket(self) -> bool:

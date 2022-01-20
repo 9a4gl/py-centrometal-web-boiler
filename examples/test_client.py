@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import asyncio
+import json
 
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
@@ -92,6 +93,10 @@ async def main(username, password):
         return
 
     await testClient.start_websocket(on_parameter_updated)
+
+    for device in testClient.data.values():
+        widget = device.get_widget_by_template("v3.timetable")
+        print(json.dumps(widget, indent=4))
 
     # await test_relogin()
     # await test_off_on()
