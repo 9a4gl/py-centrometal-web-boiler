@@ -229,7 +229,7 @@ class HttpClient(HttpClientBase):
 
     async def turn_device_by_id(self, id, on):
         cmd_value = 1 if on else 0
-        data = {"badcmd-name": "CMD", "cmd-value": cmd_value}
+        data = {"cmd-name": "CMD", "cmd-value": cmd_value}
         return await self._control(id, data)
 
     async def turn_device_circuit(self, id, circuit, on):
