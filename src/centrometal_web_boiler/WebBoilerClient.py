@@ -11,15 +11,19 @@ from centrometal_web_boiler.HttpHelper import HttpHelper
 from centrometal_web_boiler.WebBoilerWsClient import WebBoilerWsClient
 from centrometal_web_boiler.WebBoilerDeviceCollection import WebBoilerDeviceCollection
 
+
 class WebBoilerClient:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.websocket_connected = False
         self.connectivity_callback = None
         self.ws_client = WebBoilerWsClient(
-            self.ws_connected_callback, self.ws_disconnected_callback, 
-            self.ws_error_callback, self.ws_data_callback)
-    
+            self.ws_connected_callback,
+            self.ws_disconnected_callback,
+            self.ws_error_callback,
+            self.ws_data_callback,
+        )
+
     async def login(self, username, password):
         self.logger.info("WebBoilerClient - Logging in...")
         self.username = username
@@ -35,15 +39,27 @@ class WebBoilerClient:
             self.logger.warning("WebBoilerClient - there is no installed device")
             return False
         self.data.parse_installations(self.http_client.installations)
-        await asyncio.gather(self.http_client.get_configuration(), self.http_client.get_widgetgrid_list())
+        await asyncio.gather(
+            self.http_client.get_configuration(), self.http_client.get_widgetgrid_list()
+        )
         tasks = []
-        tasks.append(self.http_client.get_widgetgrid(self.http_client.widgetgrid_list["selected"]))
-        tasks.append(self.http_client.get_installation_status_all(self.http_helper.get_all_devices_ids()))
+        tasks.append(
+            self.http_client.get_widgetgrid(
+                self.http_client.widgetgrid_list["selected"]
+            )
+        )
+        tasks.append(
+            self.http_client.get_installation_status_all(
+                self.http_helper.get_all_devices_ids()
+            )
+        )
         for serial in self.http_helper.get_all_devices_serials():
             tasks.append(self.http_client.get_parameter_list(serial))
         tasks.append(self.http_client.get_notifications())
         await asyncio.gather(*tasks)
-        await self.data.parse_installation_statuses(self.http_client.installation_status_all)
+        await self.data.parse_installation_statuses(
+            self.http_client.installation_status_all
+        )
         self.data.parse_parameter_lists(self.http_client.parameter_list)
         self.data.parse_grid(self.http_client)
         return True
@@ -90,12 +106,14 @@ class WebBoilerClient:
         if self.connectivity_callback is not None:
             await self.connectivity_callback(self.websocket_connected)
         await self.data.notify_all_updated()
-        self.logger.warning(f"WebBoilerClient - disconnected close_status_code:{close_status_code} close_msg:{close_msg}")
+        self.logger.warning(
+            f"WebBoilerClient - disconnected close_status_code:{close_status_code} close_msg:{close_msg}"
+        )
 
     async def ws_error_callback(self, ws, err):
         self.logger.error(f"WebBoilerClient - error err:{err}")
-    
-    async def ws_data_callback(self, ws, stomp_frame):        
+
+    async def ws_data_callback(self, ws, stomp_frame):
         await self.data.parse_real_time_frame(stomp_frame)
 
     def is_websocket_connected(self) -> bool:
@@ -108,11 +126,21 @@ class WebBoilerClient:
 
     async def turn(self, serial, on):
         device = self.data.get_device_by_serial(serial)
-        return await self.http_client.turn_device_by_id(device["id"], on)
+        try:
+            response = await self.http_client.turn_device_by_id(device["id"], on)
+            return response["status"] == "success"
+        except Exception as e:
+            return False
 
     async def turn_circuit(self, serial, circuit, on):
         device = self.data.get_device_by_serial(serial)
-        return await self.http_client.turn_device_circuit(device["id"], circuit, on)
+        try:
+            response = await self.http_client.turn_device_circuit(
+                device["id"], circuit, on
+            )
+            return response["status"] == "success"
+        except Exception as e:
+            return False
 
     def set_connectivity_callback(self, connectivity_callback):
         self.connectivity_callback = connectivity_callback
