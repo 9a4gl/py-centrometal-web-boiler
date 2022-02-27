@@ -78,13 +78,13 @@ class WebBoilerClient:
         device = list(self.data.values())[0]
         await self.ws_client.start(device["type"])
 
-    async def refresh(self) -> bool:
+    async def refresh(self, delay = 2) -> bool:
         try:
-            tasks = []
             for id in self.http_helper.get_all_devices_ids():
-                tasks.append(self.http_client.refresh_device(id))
-                tasks.append(self.http_client.rstat_all_device(id))
-            await asyncio.gather(*tasks)
+                await self.http_client.refresh_device(id)
+                await asyncio.sleep(delay)
+                await self.http_client.rstat_all_device(id)
+                await asyncio.sleep(delay)
             return True
         except Exception as e:
             self.logger.error("WebBoilerClient::refresh failed" + str(e))
