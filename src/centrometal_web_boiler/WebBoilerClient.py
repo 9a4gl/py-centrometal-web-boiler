@@ -25,18 +25,18 @@ class WebBoilerClient:
         )
 
     async def login(self, username, password):
-        self.logger.info("WebBoilerClient - Logging in...")
+        self.logger.info("WebBoilerClient - Logging in... (" + username + ")")
         self.username = username
         self.password = password
         self.http_client = HttpClient(self.username, self.password)
         self.http_helper = HttpHelper(self.http_client)
-        self.data = WebBoilerDeviceCollection()
+        self.data = WebBoilerDeviceCollection(username)
         return await self.http_client.login()
 
     async def get_configuration(self):
         await self.http_client.get_installations()
         if self.http_helper.get_device_count() == 0:
-            self.logger.warning("WebBoilerClient - there is no installed device")
+            self.logger.warning(f"WebBoilerClient - there is no installed device ({self.username})")
             return False
         self.data.parse_installations(self.http_client.installations)
         await asyncio.gather(
@@ -69,14 +69,14 @@ class WebBoilerClient:
             await self.ws_client.close()
             return True
         except Exception as e:
-            self.logger.error("WebBoilerClient::close_websocket failed" + str(e))
+            self.logger.error("WebBoilerClient::close_websocket failed" + str(e) + f" ({self.username})")
             return False
 
     async def start_websocket(self, on_parameter_updated_callback):
-        self.logger.info("WebBoilerClient - Starting websocket...")
+        self.logger.info(f"WebBoilerClient - Starting websocket... ({self.username})")
         self.on_parameter_updated_callback = on_parameter_updated_callback
         device = list(self.data.values())[0]
-        await self.ws_client.start(device["type"])
+        await self.ws_client.start(self.username, device["type"])
 
     async def refresh(self, delay = 2) -> bool:
         try:
@@ -87,11 +87,11 @@ class WebBoilerClient:
                 await asyncio.sleep(delay)
             return True
         except Exception as e:
-            self.logger.error("WebBoilerClient::refresh failed" + str(e))
+            self.logger.error("WebBoilerClient::refresh failed" + str(e) + f" ({self.username})")
             return False
 
     async def ws_connected_callback(self, ws, frame):
-        self.logger.info("WebBoilerClient - connected")
+        self.logger.info(f"WebBoilerClient - connected ({self.username})")
         self.websocket_connected = True
         if self.connectivity_callback is not None:
             await self.connectivity_callback(self.websocket_connected)
@@ -107,11 +107,11 @@ class WebBoilerClient:
             await self.connectivity_callback(self.websocket_connected)
         await self.data.notify_all_updated()
         self.logger.warning(
-            f"WebBoilerClient - disconnected close_status_code:{close_status_code} close_msg:{close_msg}"
+            f"WebBoilerClient - disconnected close_status_code:{close_status_code} close_msg:{close_msg} ({self.username})"
         )
 
     async def ws_error_callback(self, ws, err):
-        self.logger.error(f"WebBoilerClient - error err:{err}")
+        self.logger.error(f"WebBoilerClient - error err:{err} ({self.username})")
 
     async def ws_data_callback(self, ws, stomp_frame):
         await self.data.parse_real_time_frame(stomp_frame)

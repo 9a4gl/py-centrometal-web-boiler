@@ -32,8 +32,9 @@ class WebBoilerParameter(dict):
             await callback(self)
 
 class WebBoilerDevice(dict):
-    def __init__(self):
+    def __init__(self, username):
         self.logger = logging.getLogger(__name__)
+        self.username = username
         self["parameters"] = {}
         self["temperatures"] = {}
         self["info"] = {}
@@ -52,7 +53,7 @@ class WebBoilerDevice(dict):
 
     def get_parameter(self, name):
         if not name in self["parameters"].keys():
-            self.logger.warn(f"WebBoilerDevice::get_parameter parameter {name} does not exist, creating one")
+            self.logger.warn(f"WebBoilerDevice::get_parameter parameter {name} does not exist, creating one ({self.username})")
             return self.create_parameter(name)
         return self["parameters"][name]
 
@@ -80,8 +81,9 @@ class WebBoilerDevice(dict):
 
 class WebBoilerDeviceCollection(dict):
 
-    def __init__(self, on_update_callback = None, update_key = "default"):
+    def __init__(self, username, on_update_callback = None, update_key = "default"):
         self.logger = logging.getLogger(__name__)
+        self.username = username
         self.on_update_callbacks = dict()
         self.set_on_update_callback(on_update_callback, update_key)
 
@@ -115,7 +117,8 @@ class WebBoilerDeviceCollection(dict):
     def parse_installations(self, installations : dict()):
         for device in installations:
             serial = device["label"]
-            self[serial] = WebBoilerDevice()
+            self.logger.info(f"Creating device {serial} ({self.username})")
+            self[serial] = WebBoilerDevice(self.username)
             self[serial]["id"] = device["value"]
             self[serial]["serial"] = device["label"]
             self[serial]["place"] = device["place"]
@@ -201,6 +204,6 @@ class WebBoilerDeviceCollection(dict):
                     else:
                         raise Exception(f"Unexpected message for destination: {destination}")
                 elif subscription == WEB_BOILER_STOMP_NOTIFICATION_TOPIC:
-                    self.logger.info(f"Notification received: {body}")
+                    self.logger.info(f"Notification received: {body} ({self.username})")
                 else:
                     raise Exception(f"Unexpected message for subscription: {subscription}")

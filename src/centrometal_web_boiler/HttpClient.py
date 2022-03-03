@@ -40,7 +40,7 @@ class HttpClientBase:
 
     async def _http_get(self, url, expected_code=200) -> html.HtmlElement:
         full_url = WEB_BOILER_WEBROOT + url
-        self.logger.info(f"GET {full_url}")
+        self.logger.info(f"GET {full_url} ({self.username})")
         response = await self.http_session.get(
             full_url, headers=self.headers, ssl=False
         )
@@ -53,7 +53,7 @@ class HttpClientBase:
 
     async def _http_post(self, url, data=None, expected_code=200) -> html.HtmlElement:
         full_url = WEB_BOILER_WEBROOT + url
-        self.logger.info(f"POST {full_url} -> {data}")
+        self.logger.info(f"POST {full_url} -> {data} ({self.username})")
         response = await self.http_session.post(
             full_url, headers=self.headers, data=data, ssl=False
         )
@@ -71,7 +71,7 @@ class HttpClientBase:
 
     async def _http_post_json(self, url, data=None, expected_code=200) -> dict:
         full_url = WEB_BOILER_WEBROOT + url
-        self.logger.info(f"POST-json {full_url} -> {data}")
+        self.logger.info(f"POST-json {full_url} -> {data} ({self.username})")
         response = await self.http_session.post(
             full_url, headers=self.headers_json, data=data, ssl=False
         )
@@ -91,30 +91,30 @@ class HttpClientBase:
         response = await self._http_post_json(
             "/api/inst/control/multiple", data=json.dumps(data)
         )
-        self.logger.info(f"Sending control multiple {data}")
-        self.logger.info(f"Received response {{{json.dumps(response)}}}")
+        self.logger.info(f"Sending control multiple {data} ({self.username})")
+        self.logger.info(f"Received response {{{json.dumps(response)}}} ({self.username})")
         return response
 
     async def _control(self, id, data):
         response = await self._http_post_json(
             "/api/inst/control/" + str(id), data=json.dumps(data)
         )
-        self.logger.info(f"Sending control {data}")
-        self.logger.info(f"Received response {{{json.dumps(response)}}}")
+        self.logger.info(f"Sending control {data} ({self.username})")
+        self.logger.info(f"Received response {{{json.dumps(response)}}} ({self.username})")
         return response
 
     async def _control_advanced(self, id, data):
         response = await self._http_post_json(
             "/api/inst/control/advanced/" + str(id), data=json.dumps(data)
         )
-        self.logger.info(f"Sending control advanced {data}")
-        self.logger.info(f"Received response {{{json.dumps(response)}}}")
+        self.logger.info(f"Sending control advanced {data} ({self.username})")
+        self.logger.info(f"Received response {{{json.dumps(response)}}} ({self.username})")
         return response
 
 
 class HttpClient(HttpClientBase):
     async def __get_csrf_token(self) -> None:
-        self.logger.info("HttpClient - Fetching getCsrfToken")
+        self.logger.info(f"HttpClient - Fetching getCsrfToken ({self.username})")
         html_doc = await self._http_get("/login")
         input_element = html_doc.xpath('//input[@name="_csrf_token"]')
         if len(input_element) != 1:
@@ -124,11 +124,11 @@ class HttpClient(HttpClientBase):
             raise Exception(
                 "HttpClient::getCsrfToken  failed - cannot find csrf token vaue"
             )
-        self.logger.info(f"HttpClient - csrf_token: {values[0]}")
+        self.logger.info(f"HttpClient - csrf_token: {values[0]} ({self.username})")
         self.csrf_token = values[0]
 
     async def __login_check(self) -> None:
-        self.logger.info("HttpClient - Logging in...")
+        self.logger.info(f"HttpClient - Logging in... ({self.username})")
         data = dict()
         data["_csrf_token"] = self.csrf_token
         data["_username"] = self.username
@@ -138,7 +138,7 @@ class HttpClient(HttpClientBase):
         loading_div_element = html_doc.xpath('//div[@id="id-loading-screen-blackout"]')
         if len(loading_div_element) != 1:
             raise Exception("HttpClient::__loginCheck cannot find loading div element")
-        self.logger.info("HttpClient - Login successfull")
+        self.logger.info(f"HttpClient - Login successfull ({self.username})")
 
     async def login(self) -> bool:
         try:
@@ -146,10 +146,11 @@ class HttpClient(HttpClientBase):
             await self.__login_check()
             return True
         except Exception as e:
-            self.logger.error(str(e))
+            self.logger.error(str(e) + f" ({self.username})")
             exc_type, exc_value, exc_traceback = sys.exc_info()
             self.logger.error(
                 " ".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+                + f" ({self.username})"
             )
             return False
 
@@ -164,6 +165,7 @@ class HttpClient(HttpClientBase):
         self.logger.debug(
             "HttpClient::get_installations -> "
             + json.dumps(self.installations, indent=4)
+            + f" ({self.username})"
         )
 
     async def get_configuration(self) -> None:
@@ -173,6 +175,7 @@ class HttpClient(HttpClientBase):
         self.logger.debug(
             "HttpClient::get_configuration configuration -> "
             + json.dumps(self.configuration, indent=4)
+            + f" ({self.username})"
         )
 
     async def get_widgetgrid_list(self) -> None:
@@ -194,6 +197,7 @@ class HttpClient(HttpClientBase):
         self.logger.debug(
             "HttpClient::get_installation_status_all -> "
             + json.dumps(self.installation_status_all, indent=4)
+            + f" ({self.username})"
         )
 
     async def get_parameter_list(self, serial) -> None:
@@ -203,6 +207,7 @@ class HttpClient(HttpClientBase):
         self.logger.debug(
             "HttpClient::get_parameter_list -> "
             + json.dumps(self.parameter_list[serial], indent=4)
+            + f" ({self.username})"
         )
 
     async def refresh_device(self, id) -> None:
