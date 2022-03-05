@@ -37,6 +37,7 @@ class HttpClientBase:
     async def close_session(self):
         if self.http_session is not None:
             await self.http_session.close()
+            self.http_session = None
 
     async def _http_get(self, url, expected_code=200) -> html.HtmlElement:
         full_url = WEB_BOILER_WEBROOT + url
