@@ -31,7 +31,7 @@ class HttpClientBase:
         self.http_session = aiohttp.ClientSession()
 
     async def reinitialize_session(self):
-        await self.http_session.close()
+        await self.close_session()
         self.http_session = aiohttp.ClientSession()
 
     async def close_session(self):
