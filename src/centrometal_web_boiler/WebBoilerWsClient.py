@@ -25,6 +25,7 @@ class WebBoilerWsClient:
         self.data_callback = data_callback
         self.client = ws.ClientSocket()
         self.username = ""
+        self.subscription_index = 0
 
         @self.client.on('connect')        
         async def on_connect():
@@ -59,9 +60,8 @@ class WebBoilerWsClient:
             self.logger.info(f"WebBoilerWsClient::on_close close_status_code:{code} close_msg:{reason} ({self.username})")
             await self.disconnected_callback(self.client, code, reason)
 
-    async def start(self, username, type):
+    async def start(self, username):
         self.username = username
-        self.type = type
         self.logger.info(f"WebBoilerWsClient connecting... ({self.username})")
         # _ClientSocket__main is hack to call private method __main in ClientSocket
         self.client.loop.create_task(self.client._ClientSocket__main(WEB_BOILER_STOMP_URL, ssl=ssl.create_default_context()))
@@ -75,7 +75,10 @@ class WebBoilerWsClient:
         topic = WEB_BOILER_STOMP_NOTIFICATION_TOPIC
         await self.client.send(stomper.subscribe(topic, "sub-0", "auto"))
 
-    async def subscribe_to_installation(self, ws, serial):
+    async def subscribe_to_installation(self, ws, device):
+        type = device["type"]
+        serial = device["serial"]
         self.logger.info(f"WebBoilerWsClient::subscribe_to_installation {serial} ({self.username})")
-        topic = WEB_BOILER_STOMP_DEVICE_TOPIC + self.type + "." + serial
-        await self.client.send(stomper.subscribe(topic, "sub-1", "auto"))
+        topic = WEB_BOILER_STOMP_DEVICE_TOPIC + type + "." + serial
+        self.subscription_index = self.subscription_index + 1
+        await self.client.send(stomper.subscribe(topic, f"sub-{self.subscription_index}", "auto"))

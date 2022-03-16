@@ -195,7 +195,7 @@ class WebBoilerDeviceCollection(dict):
             if "subscription" in headers and "destination" in headers:
                 subscription = headers["subscription"]
                 destination = headers["destination"]
-                if subscription == "sub-1":
+                if subscription.startswith("sub-"):
                     if destination.startswith(WEB_BOILER_STOMP_DEVICE_TOPIC):
                         dotpos = destination.rfind(".")
                         serial = destination[dotpos+1:]

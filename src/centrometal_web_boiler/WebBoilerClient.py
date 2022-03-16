@@ -76,7 +76,7 @@ class WebBoilerClient:
         self.logger.info(f"WebBoilerClient - Starting websocket... ({self.username})")
         self.on_parameter_updated_callback = on_parameter_updated_callback
         device = list(self.data.values())[0]
-        await self.ws_client.start(self.username, device["type"])
+        await self.ws_client.start(self.username)
 
     async def refresh(self, delay = 2) -> bool:
         try:
@@ -97,7 +97,8 @@ class WebBoilerClient:
             await self.connectivity_callback(self.websocket_connected)
         await self.ws_client.subscribe_to_notifications(ws)
         for serial in self.http_helper.get_all_devices_serials():
-            await self.ws_client.subscribe_to_installation(ws, serial)
+            device = self.data.get_device_by_serial(serial)
+            await self.ws_client.subscribe_to_installation(ws, device)
         self.data.set_on_update_callback(self.on_parameter_updated_callback)
         await self.data.notify_all_updated()
 
