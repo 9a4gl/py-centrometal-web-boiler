@@ -6,7 +6,7 @@
 import logging
 import stomper
 import ssl
-from .ws import ClientSocket
+from centrometal_web_boiler.ws import ClientSocket
 
 from centrometal_web_boiler.const import (
     WEB_BOILER_STOMP_LOGIN_USERNAME, 
