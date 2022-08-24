@@ -6,7 +6,7 @@
 import logging
 import stomper
 import ssl
-import ws
+from .ws import ClientSocket
 
 from centrometal_web_boiler.const import (
     WEB_BOILER_STOMP_LOGIN_USERNAME, 
@@ -23,7 +23,7 @@ class WebBoilerWsClient:
         self.disconnected_callback = disconnected_callback
         self.close_callback = close_callback
         self.data_callback = data_callback
-        self.client = ws.ClientSocket()
+        self.client = ClientSocket()
         self.username = ""
         self.subscription_index = 0
 
