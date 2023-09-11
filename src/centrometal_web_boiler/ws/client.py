@@ -99,7 +99,7 @@ class ClientSocket(BaseSocket):
         )
         async with asyncio.TaskGroup() as tg:
             tg.create_task(self.__on_connect())
-        done, pending = await asyncio.wait_for(self.__message_consumer(), timeout=None)
+        done = await asyncio.wait_for(self.__message_consumer(), timeout=None)
         if ConnectionClosedError in [type(ret.result()) for ret in done]:
             return
         self.disconnection = Object(
