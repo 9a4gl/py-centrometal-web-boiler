@@ -50,7 +50,7 @@ class ClientSocket(BaseSocket):
             )
             self.loop.create_task(
                 asyncio.wait(
-                    [coro(e.code, e.reason) for coro in self.listeners.disconnect]
+                    [asyncio.create_task(coro(e.code, e.reason)) for coro in self.listeners.disconnect]
                     + [
                         self.__collector_verifier(
                             futures, "disconnect", e.code, e.reason
@@ -100,7 +100,7 @@ class ClientSocket(BaseSocket):
         async with asyncio.TaskGroup() as tg:
             tg.create_task(self.__on_connect())
         done = await asyncio.wait_for(self.__message_consumer(), timeout=None)
-        if ConnectionClosedError == done:
+        if ConnectionClosedError == type(done):
             return
         self.disconnection = Object(
             {
@@ -111,7 +111,7 @@ class ClientSocket(BaseSocket):
         )
         await asyncio.wait(
             [
-                coro(self.connection.close_code, self.connection.close_reason)
+                asyncio.create_task(coro(self.connection.close_code, self.connection.close_reason))
                 for coro in self.listeners.close
             ]
             + [
