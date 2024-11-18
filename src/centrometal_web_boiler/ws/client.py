@@ -50,7 +50,10 @@ class ClientSocket(BaseSocket):
             )
             self.loop.create_task(
                 asyncio.wait(
-                    [asyncio.create_task(coro(e.code, e.reason)) for coro in self.listeners.disconnect]
+                    [
+                        asyncio.create_task(coro(e.code, e.reason))
+                        for coro in self.listeners.disconnect
+                    ]
                     + [
                         self.__collector_verifier(
                             futures, "disconnect", e.code, e.reason
@@ -111,7 +114,9 @@ class ClientSocket(BaseSocket):
         )
         await asyncio.wait(
             [
-                asyncio.create_task(coro(self.connection.close_code, self.connection.close_reason))
+                asyncio.create_task(
+                    coro(self.connection.close_code, self.connection.close_reason)
+                )
                 for coro in self.listeners.close
             ]
             + [
@@ -126,7 +131,7 @@ class ClientSocket(BaseSocket):
         )
 
     async def send(self, content: typing.Any = None, *, data: dict = None):
-        await self.connection.send(content=content, data=data)
+        await self.connection.send(content)
 
     async def close(self, code: int = 1000, reason: str = ""):
         await self.connection.close(code=code, reason=reason)
