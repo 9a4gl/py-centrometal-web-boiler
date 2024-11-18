@@ -97,9 +97,7 @@ class ClientSocket(BaseSocket):
         return EventCollector(websocket=self, time=time)
 
     async def __main(self, uri, **kwargs):
-        self.connection = await websockets.connect(
-            uri, create_protocol=WSCProtocol, **kwargs
-        )
+        self.connection = await websockets.connect(uri, **kwargs)
         async with asyncio.TaskGroup() as tg:
             tg.create_task(self.__on_connect())
         done = await asyncio.wait_for(self.__message_consumer(), timeout=None)
