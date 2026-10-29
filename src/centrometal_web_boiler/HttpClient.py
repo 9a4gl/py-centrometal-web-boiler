@@ -244,3 +244,8 @@ class HttpClient(HttpClientBase):
         data = {cmd_name: cmd_value}
         data = {"messages": {str(id): {cmd_name: cmd_value}}}
         return await self._control_multiple(data)
+
+    async def set_device_parameter(self, id, dbindex, value):
+        """Write parameter PVAL_<dbindex>_0 the same way the web portal does."""
+        data = {"messages": {str(id): {"PWR " + str(dbindex): value}}}
+        return await self._control_multiple(data)

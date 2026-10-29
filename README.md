@@ -31,3 +31,9 @@ python.exe examples\test_client.py --username your.email@example-com --password 
 ## Disclaimer
 
 Use it at your own risk.
+
+## Writing parameters
+
+`await client.set_parameter(serial, dbindex, value)` writes `PVAL_<dbindex>_0`
+(e.g. day room temperature of a heating circuit), sending `PWR <dbindex>` via
+`/api/inst/control/multiple` like the Centrometal web portal.
