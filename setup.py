@@ -15,9 +15,10 @@ setup(
         "centrometal_web_boiler.ws.wsprotocols",
     ],
     url="https://github.com/9a4gl/py-centrometal-web-boiler",
+    python_requires=">=3.11",
     install_requires=[
         "lxml>=6.1.3",
-        "websockets>=17.4",
+        "websockets>=13.0",
         "stomper>=0.4.3",
         "aiohttp>=3.14.5",
         "faust-cchardet>=3.2.0",
