@@ -17,11 +17,11 @@ from centrometal_web_boiler.const import (
 
 class WebBoilerWsClient:
 
-    def __init__(self, connected_callback, disconnected_callback, close_callback, data_callback):
+    def __init__(self, connected_callback, disconnected_callback, error_callback, data_callback):
         self.logger = logging.getLogger(__name__)
         self.connected_callback = connected_callback
         self.disconnected_callback = disconnected_callback
-        self.close_callback = close_callback
+        self.error_callback = error_callback
         self.data_callback = data_callback
         self.client = ClientSocket()
         self.username = ""

@@ -1,7 +1,7 @@
 from datetime import datetime
 import websockets, typing, asyncio, json
 from json.decoder import JSONDecodeError
-from websockets import ConnectionClosedError
+from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 
 from .base import BaseSocket
 from .models import Message, Object
@@ -44,25 +44,50 @@ class ClientSocket(BaseSocket):
                         tg.create_task(
                             self.__collector_verifier(futures, "message", message_cls)
                         )
-        except ConnectionClosedError as e:
+        except (ConnectionClosed, ExceptionGroup) as exc:
+            # A listener (e.g. on_message sending a keep-alive) may hit the
+            # closed connection inside the TaskGroup, which wraps the
+            # ConnectionClosed* exception in an ExceptionGroup.
+            closed = self.__find_connection_closed(exc)
+            if closed is None:
+                raise
+            if not isinstance(closed, ConnectionClosedError):
+                # Normal close (1000/1001): let __main run the close listeners.
+                return None
+            code, reason = self.__close_info(closed)
             self.disconnection = Object(
-                {"code": e.code, "reason": e.reason, "disconnected": True}
+                {"code": code, "reason": reason, "disconnected": True}
             )
-            self.loop.create_task(
-                asyncio.wait(
-                    [
-                        asyncio.create_task(coro(e.code, e.reason))
-                        for coro in self.listeners.disconnect
-                    ]
-                    + [
-                        self.__collector_verifier(
-                            futures, "disconnect", e.code, e.reason
-                        )
-                        for futures in self.listeners.disconnect_collector
-                    ]
+            tasks = [
+                asyncio.create_task(coro(code, reason))
+                for coro in self.listeners.disconnect
+            ] + [
+                asyncio.create_task(
+                    self.__collector_verifier(futures, "disconnect", code, reason)
                 )
-            )
-            return e
+                for futures in self.listeners.disconnect_collector
+            ]
+            if tasks:
+                await asyncio.wait(tasks)
+            return closed
+
+    @staticmethod
+    def __find_connection_closed(exc):
+        if isinstance(exc, ConnectionClosed):
+            return exc
+        if isinstance(exc, BaseExceptionGroup):
+            for inner in exc.exceptions:
+                found = ClientSocket.__find_connection_closed(inner)
+                if found is not None:
+                    return found
+        return None
+
+    @staticmethod
+    def __close_info(closed: ConnectionClosed):
+        frame = closed.rcvd or closed.sent
+        if frame is None:
+            return 1006, ""
+        return frame.code, frame.reason
 
     async def __on_connect(self):
         async with asyncio.TaskGroup() as tg:
@@ -100,8 +125,8 @@ class ClientSocket(BaseSocket):
         self.connection = await websockets.connect(uri, **kwargs)
         async with asyncio.TaskGroup() as tg:
             tg.create_task(self.__on_connect())
-        done = await asyncio.wait_for(self.__message_consumer(), timeout=None)
-        if ConnectionClosedError == type(done):
+        done = await self.__message_consumer()
+        if isinstance(done, ConnectionClosedError):
             return
         self.disconnection = Object(
             {
@@ -110,23 +135,24 @@ class ClientSocket(BaseSocket):
                 "disconnected": True,
             }
         )
-        await asyncio.wait(
-            [
-                asyncio.create_task(
-                    coro(self.connection.close_code, self.connection.close_reason)
-                )
-                for coro in self.listeners.close
-            ]
-            + [
+        tasks = [
+            asyncio.create_task(
+                coro(self.connection.close_code, self.connection.close_reason)
+            )
+            for coro in self.listeners.close
+        ] + [
+            asyncio.create_task(
                 self.__collector_verifier(
                     futures,
                     "close",
                     self.connection.close_code,
                     self.connection.close_reason,
                 )
-                for futures in self.listeners.close_collector
-            ]
-        )
+            )
+            for futures in self.listeners.close_collector
+        ]
+        if tasks:
+            await asyncio.wait(tasks)
 
     async def send(self, content: typing.Any = None, *, data: dict = None):
         await self.connection.send(content)
