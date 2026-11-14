@@ -143,5 +143,16 @@ class WebBoilerClient:
         except Exception as e:
             return False
 
+    async def set_parameter(self, serial, dbindex, value):
+        """Set a writable parameter (e.g. temperature set point) by dbindex."""
+        device = self.data.get_device_by_serial(serial)
+        try:
+            response = await self.http_client.set_device_parameter(
+                device["id"], dbindex, value
+            )
+            return response["status"] == "success"
+        except Exception as e:
+            return False
+
     def set_connectivity_callback(self, connectivity_callback):
         self.connectivity_callback = connectivity_callback
