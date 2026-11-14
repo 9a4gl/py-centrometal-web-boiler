@@ -20,9 +20,6 @@ setup(
         "lxml>=6.1.3",
         "websockets>=13.0",
         "stomper>=0.4.3",
-        "aiohttp>=3.14.5",
-        "faust-cchardet>=3.2.0",
-        "aiodns>=4.0.4",
-        "pycares>=5.2.1",
+        "aiohttp>=3.13.3",
     ],
 )
