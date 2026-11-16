@@ -35,13 +35,14 @@ class WebBoilerWsClient:
         @self.client.on('message')
         async def on_message(message):
             data = message.data
+            frame = None if data == "\n" else stomper.unpack_frame(data)
+            # Handle ERROR before sending: the server closes right after it.
+            if frame is not None and frame["cmd"] == "ERROR":
+                await self.error_callback(self.client, frame)
+                return
             # Send new line to any frame (keep alive frame)
             await self.client.send("\n")
-            if data == "\n": # We received keep alive frame, ignore it
-                return
-            frame = stomper.unpack_frame(data)
-            if frame["cmd"] == "ERROR":
-                await self.error_callback(self.client, frame)
+            if frame is None: # We received keep alive frame, ignore it
                 return
             if frame["cmd"] == "CONNECTED":
                 self.logger.info(f"WebBoilerWsClient::on_message connected ({self.username})")

@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="py-centrometal-web-boiler",
-    version="0.0.62",
+    version="0.0.63",
     description="Python library to interact with Centrometal Boiler System.",
     author="Tihomir Heidelberg",
     author_email="tihomir.heidelberg@lite.hr",
@@ -18,7 +18,7 @@ setup(
     python_requires=">=3.11",
     install_requires=[
         "lxml>=6.1.3",
-        "websockets>=13.0",
+        "websockets>=15.0.1",
         "stomper>=0.4.3",
         "aiohttp>=3.14.5",
         "faust-cchardet>=3.2.0",

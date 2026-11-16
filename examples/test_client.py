@@ -117,6 +117,5 @@ if __name__ == '__main__':
             handlers=[ logging.StreamHandler()])
         logging.captureWarnings(True)
         
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(main(args.username, args.password))
+        asyncio.run(main(args.username, args.password))
 
